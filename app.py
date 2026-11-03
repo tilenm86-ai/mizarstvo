@@ -62,6 +62,9 @@ odmik_utora_zadaj = st.sidebar.slider("Odmik utora od zadnjega roba (mm)", min_v
 debelina_utora = st.sidebar.slider("Debelina utora (širina reza v mm)", min_value=4, max_value=8, value=6, key="input_deb_utora")
 globina_utora = st.sidebar.slider("Globina utora (v globino materiala v mm)", min_value=4, max_value=15, value=6, key="input_glob_utora")
 
+# Dodan drsnik za zračnost pri višini hrbta
+zracnost_visina_hrbta = st.sidebar.slider("Zračnost za višino hrbta (mm)", min_value=0, max_value=10, value=2, key="input_zracnost_v_hrbta")
+
 preostanek_mesa = debelina - globina_utora
 if preostanek_mesa < 4:
     st.sidebar.warning(f"⚠️ Pozor! Zadaj za privijačenje ostane samo {preostanek_mesa} mm materiala.")
@@ -114,6 +117,7 @@ if st.sidebar.button("💾 Shrani omaro v projekt", key="gumb_shrani"):
         "Odmik_Utora_Zadaj": odmik_utora_zadaj,
         "Debelina_Utora": debelina_utora,
         "Globina_Utora": globina_utora,
+        "Zracnost_Visina_Hrbta": zracnost_visina_hrbta,
         "Odmik_Hrbta": odmik_hrbta,
         "Zracnost_Polic": zracnost_polic_sirina,
         "Odmik_Police_G": odmik_police_globina,
@@ -247,20 +251,14 @@ if len(st.session_state.elements) > 0:
     with st.expander("📐 Pokaži 2D tehnične poglede (Spredaj, Stranski prerez, Od zgoraj)"):
         tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
         
-        # 1. ZAVIHEK: POGLED OD SPREDAJ
         with tab_spredaj:
             st.write("Skica omare gledano od spredaj (prikazuje stranice, strop, pod in police).")
             fig_front = go.Figure()
-            # Leva stranica
             fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            # Desna stranica
             fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            # Pod
             fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line=dict(color="#DEB887", width=2), fillcolor="#DEB887", opacity=0.8)
-            # Strop
             fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line=dict(color="#F4A460", width=2), fillcolor="#F4A460", opacity=0.8)
             
-            # Police od spredaj
             if st_polic_3d > 0:
                 notranja_visina = h_3d - (2 * d_3d)
                 korak_visine = notranja_visina / (st_polic_3d + 1)
@@ -277,7 +275,6 @@ if len(st.session_state.elements) > 0:
             )
             st.plotly_chart(fig_front, use_container_width=True)
 
-        # 2. ZAVIHEK: POGLED OD STRANI
         with tab_stran:
             st.write("Stranski prerez omare (prikazuje globino, utor za hrbet in police).")
             fig_side = go.Figure()
@@ -304,17 +301,12 @@ if len(st.session_state.elements) > 0:
             )
             st.plotly_chart(fig_side, use_container_width=True)
 
-        # 3. ZAVIHEK: POGLED OD ZGORAJ (TLORIS)
         with tab_zgoraj:
             st.write("Tloris omare gledano od zgoraj (prikazuje širino, globino in utor za hrbet).")
             fig_top = go.Figure()
-            # Leva stranica od zgoraj
             fig_top.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            # Desna stranica od zgoraj
             fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            # Strop (zgoraj)
             fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line=dict(color="#F4A460", width=2), fillcolor="#F4A460", opacity=0.7)
-            # Hrbet od zgoraj
             fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
 
             fig_top.update_layout(
@@ -328,4 +320,70 @@ if len(st.session_state.elements) > 0:
     # --- 4. IZRAČUN ---
     if st.button("🧮 Izračunaj skupni krojni list in robne trakove", type="primary", key="gumb_izracun"):
         vsi_kosi = []
-        
+        for el in st.session_state.elements:
+            d = el.get("Debelina", 18)
+            s = el.get("Širina", 800)
+            v = el.get("Višina", 720)
+            g = el.get("Globina", 550)
+            naziv = el.get("Naziv", "Element")
+            st_polic = el.get("Police", 0)
+            ima_v = el.get("Vrata", False)
+            
+            nacin_h = el.get("Nacin_Hrbta", "")
+            gutora = el.get("Globina_Utora", 6)
+            oh = el.get("Odmik_Hrbta", 0)
+            zp = el.get("Zracnost_Polic", 2)
+            opg = el.get("Odmik_Police_G", 25)
+            zracnost_v_hrbta = el.get("Zracnost_Visina_Hrbta", 2)
+
+            izbrani_r_str = el.get("Izbrani_Robovi_Stranice", [])
+            abs_s = ", ".join(izbrani_r_str) if izbrani_r_str else "Brez"
+
+            izbrani_r_sp = el.get("Izbrani_Robovi_StropPod", [])
+            abs_sp = ", ".join(izbrani_r_sp) if izbrani_r_sp else "Brez"
+
+            abs_p = "1x sprednji rob" if el.get("ABS_Polica") == "Da (1x rob)" else "Brez"
+            abs_v = "Vse 4 strani" if el.get("ABS_Vrata") == "Vse 4 strani" else "Brez"
+
+            # 1. Stranici
+            vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v, "Robni trak (ABS)": abs_s})
+            
+            # 2. Strop in pod
+            sirina_kosa = s - (2 * d)
+            if "Vsi elementi" in nacin_h:
+                globina_stropa_poda = g + gutora
+            else:
+                globina_stropa_poda = g - oh
+
+            vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
+            
+            # 3. Hrbtni del (točna formula z uporabniško nastavljivo zračnostjo po višini)
+            zracnost_sirina_hrbta = 2  # fiksna zračnost širine za utor
+            
+            if "Samo stranice" in nacin_h:
+                sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
+                visina_hrbta = v - zracnost_v_hrbta
+            else:
+                sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
+                visina_hrbta = (v - (2 * d)) + (2 * gutora) - zracnost_v_hrbta
+                
+            vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta, "Robni trak (ABS)": "Brez"})
+            
+            # 4. Police
+            if st_polic > 0:
+                sirina_police = sirina_kosa - zp
+                globina_police = g - gutora - opg - oh
+                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
+            
+            # 5. Vrata
+            if ima_v:
+                visina_vrat = v - 4
+                sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
+                strop_kosov = 2 if s > 600 else 1
+                vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
+
+        st.success("Krojni list z vsemi nastavitvami uspešno izračunan!")
+        df_skupaj = pd.DataFrame(vsi_kosi)
+        st.dataframe(df_skupaj, use_container_width=True)
+else:
+    st.info("V projektu še ni elementov. Izberite prostor in dodajte prvo omaro v stranskem meniju.")
