@@ -1,8 +1,9 @@
 import streamlit as st
+import pandas as pd
 
 # Naslov aplikacije v brskalniku
 st.title("🪚 Mizarski Kalkulator in Krojni List")
-st.write("Vnesite mere omare, program pa vam bo izračunal točen krojni list in seznam materiala.")
+st.write("Vnesite mere omare, program pa vam bo izračunal točen krojni list za utorjen hrbet (5 mm).")
 
 # Vnosna polja v stranskem meniju
 st.sidebar.header("Nastavitve elementa")
@@ -24,20 +25,22 @@ if st.button("Izračunaj krojni list", type="primary"):
     d = debelina
     kosi = []
 
-    # 1. Stranici
+    # 1. Stranici (polna višina in globina)
     kosi.append({"Del": "Stranica", "Količina": 2, "Širina (mm)": globina, "Dolžina/Višina (mm)": visina})
 
-    # 2. Strop in pod
+    # 2. Strop in pod (širina zmanjšana za obe stranici)
     sirina_kosa = sirina - (2 * d)
     kosi.append({"Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina, "Dolžina/Višina (mm)": sirina_kosa})
 
-    # 3. Hrbtna stran (izeračun iz utora ali čez)
-    kosi.append({"Del": "Hrbtni del (HDF)", "Količina": 1, "Širina (mm)": sirina, "Dolžina/Višina (mm)": visina})
+    # 3. Hrbtni del (HDF 5 mm v utor)
+    sirina_hrbta = sirina - (2 * d) + 10  # z vštetim utorom
+    visina_hrbta = visina + 10
+    kosi.append({"Del": "Hrbtni del (HDF 5mm - v utor)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta})
 
-    # 4. Police
+    # 4. Police (krajše zaradi zraka zadaj in prostora za hrbet)
     if stevilo_polic > 0:
         sirina_police = sirina - (2 * d) - 2  # 1mm zračnosti na vsako stran
-        globina_police = globina - 20        # zrak zadaj
+        globina_police = globina - 20        # odmik zadaj za zrak/hrbet
         kosi.append({"Del": "Police", "Količina": stevilo_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police})
 
     # 5. Vrata
@@ -48,9 +51,8 @@ if st.button("Izračunaj krojni list", type="primary"):
         kosi.append({"Del": "Vrata", "Količina": strop_kosov_vrat, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat})
 
     # Izris rezultatov
-    st.success("Izračun je končan!")
+    st.success("Izračun za utorjen hrbet je končan!")
     st.subheader("Seznam krojnih kosov:")
     
-    import pandas as pd
     df = pd.DataFrame(kosi)
     st.dataframe(df, use_container_width=True)
