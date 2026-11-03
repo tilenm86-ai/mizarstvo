@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz z Debelino in Krojni List")
+st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
 st.write("Izberi prostor, vnesi omaro, določi ABS robove ter preveri 3D model s prikazom debelin elementov.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
@@ -221,7 +221,7 @@ if len(st.session_state.elements) > 0:
         for el in st.session_state.elements:
             d = el.get("Debelina", 18)
             s = el.get("Širina", 800)
-            v = el.get("Visina", 720)
+            v = el.get("Višina", 720)
             g = el.get("Globina", 550)
             naziv = el.get("Naziv", "Element")
             st_polic = el.get("Police", 0)
@@ -259,4 +259,23 @@ if len(st.session_state.elements) > 0:
                 sirina_hrbta = s - (2 * d)
                 visina_hrbta = v - (2 * d)
                 
-            vsi_kosi.append({"Omarica": naziv, "Del": "
+            vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta, "Robni trak (ABS)": "Brez"})
+            
+            # 4. Police
+            if st_polic > 0:
+                sirina_police = sirina_kosa - zp
+                globina_police = g - opg
+                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
+            
+            # 5. Vrata
+            if ima_v:
+                visina_vrat = v - 4
+                sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
+                strop_kosov = 2 if s > 600 else 1
+                vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
+
+        st.success("Krojni list z izbranimi ABS robovi stranic uspešno izračunan!")
+        df_skupaj = pd.DataFrame(vsi_kosi)
+        st.dataframe(df_skupaj, use_container_width=True)
+else:
+    st.info("V projektu še ni elementov. Izberite prostor in dodajte prvo omaro.")
