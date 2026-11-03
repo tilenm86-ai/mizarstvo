@@ -4,7 +4,6 @@ import plotly.graph_objects as go
 
 st.set_page_config(layout="wide")
 
-# --- CSS STIL ZA ŠIRŠI STRANSKI MENI IN LAŽJE SKROLANJE ---
 st.markdown(
     """
     <style>
@@ -20,7 +19,6 @@ st.markdown(
 st.title("🪚 Mizarski Kalkulator: 3D, Krojni List in Tehnične 2D Risbe s Kotami")
 st.write("Izberi prostor, vnesi omaro, določi nastavitve utora in ABS robove ter preveri prave tehnične izrise.")
 
-# --- AVTOMATSKA PRIVZETA OMARICA OB ZAČETKU ---
 if "elements" not in st.session_state:
     st.session_state.elements = [{
         "Projekt": "Kuhinja",
@@ -46,7 +44,6 @@ if "elements" not in st.session_state:
         "ABS_Vrata": "Vse 4 strani"
     }]
 
-# --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
 vrsta_projekta = st.sidebar.selectbox(
     "Izberi prostor", 
     ["Kuhinja", "Dnevna soba", "Spalnica / Garderoba", "Kopalnica"],
@@ -62,7 +59,6 @@ elif vrsta_projekta == "Spalnica / Garderoba":
 else:
     mozne_omare = ["Kopalniška omarica pod umivalnikom", "Visoka kopalniška omara z ogledalom"]
 
-# --- 2. KORAK: VNOS ELEMENTA V STRANSKEM MENIJU ---
 st.sidebar.divider()
 st.sidebar.header("➕ Dodaj element v projekt")
 ime_elementa = st.sidebar.text_input("Naziv elementa", value="Omarica 1", key="input_ime")
@@ -84,7 +80,6 @@ with col2:
 with col3:
     globina = st.sidebar.number_input("Globina (mm)", value=550, step=10, key="input_globina")
 
-# --- 3. KORAK: NASTAVITVE HRBTA, UTORA IN ROBOV (ABS) V STRANSKEM MENIJU ---
 st.sidebar.subheader("⚙️ Konstrukcija hrbta, utora in ABS")
 nacin_hrbta = st.sidebar.selectbox(
     "Vgradnja hrbta", 
@@ -118,7 +113,7 @@ zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm
 odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="input_odmik_pol")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Izbira ABS robov (tapni za izbor):**")
+st.sidebar.markdown("**Izbira ABS robov:**")
 
 izbrani_robovi_stranice = st.sidebar.multiselect(
     "Stranica - ABS robovi", 
@@ -163,7 +158,6 @@ if st.sidebar.button("💾 Shrani omaro v projekt", key="gumb_shrani"):
     }]
     st.sidebar.success(f"Posodobljeno: {ime_elementa}")
 
-# --- GLAVNI ZASLON ---
 st.subheader(f"📋 Seznam elementov za projekt: {vrsta_projekta}")
 
 if len(st.session_state.elements) > 0:
@@ -190,7 +184,6 @@ if len(st.session_state.elements) > 0:
 
     st.divider()
 
-    # --- POMOŽNA FUNKCIJA ZA 3D KVADER ---
     def dodaj_kvader(fig, x_min, x_max, y_min, y_max, z_min, z_max, color, name):
         fig.add_trace(go.Mesh3d(
             x=[x_min, x_max, x_max, x_min, x_min, x_max, x_max, x_min],
@@ -205,5 +198,130 @@ if len(st.session_state.elements) > 0:
             showscale=False
         ))
 
-    # --- POMOŽNE FUNKCIJE ZA RDEČE TEHNIČNE KOTE ---
-    def narisi_koto_horizontalno(fig,
+    def narisi_koto_horizontalno(fig, x_start, x_end, y_pos, tekst):
+        sredina = (x_start + x_end) / 2
+        fig.add_trace(go.Scatter(x=[x_start, sredina - 30], y=[y_pos, y_pos], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
+        fig.add_trace(go.Scatter(x=[sredina + 30, x_end], y=[y_pos, y_pos], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
+        fig.add_trace(go.Scatter(
+            x=[sredina], y=[y_pos],
+            mode="text",
+            text=[tekst],
+            textfont=dict(color="red", size=11),
+            textposition="middle center",
+            showlegend=False
+        ))
+        fig.add_trace(go.Scatter(x=[x_start, x_start], y=[y_pos - 5, y_pos + 5], mode="lines", line=dict(color="red", width=1), showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_end, x_end], y=[y_pos - 5, y_pos + 5], mode="lines", line=dict(color="red", width=1), showlegend=False))
+
+    def narisi_koto_vertikalno(fig, y_start, y_end, x_pos, tekst):
+        sredina = (y_start + y_end) / 2
+        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[y_start, sredina - 25], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[sredina + 25, y_end], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
+        fig.add_trace(go.Scatter(
+            x=[x_pos], y=[sredina],
+            mode="text",
+            text=[tekst],
+            textfont=dict(color="red", size=11),
+            textposition="middle center",
+            showlegend=False
+        ))
+        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_start, y_start], mode="lines", line=dict(color="red", width=1), showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_end, y_end], mode="lines", line=dict(color="red", width=1), showlegend=False))
+
+    with st.expander("🧊 Pokaži 3D predogled omare (Z možnostjo približevanja in vrtenja)"):
+        izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="select_3d_index")
+        
+        el_3d = st.session_state.elements[izbran_indeks]
+        d_3d = el_3d["Debelina"]
+        w_3d = el_3d["Širina"]
+        h_3d = el_3d["Višina"]
+        depth_3d = el_3d["Globina"]
+        st_polic_3d = el_3d["Police"]
+        opg_3d = el_3d["Odmik_Police_G"]
+        zp_3d = el_3d["Zracnost_Polic"]
+        nacin_h_3d = el_3d["Nacin_Hrbta"]
+        ouz_3d = el_3d.get("Odmik_Utora_Zadaj", 10)
+        gutora_3d = el_3d["Globina_Utora"]
+        oh_3d = el_3d["Odmik_Hrbta"]
+
+        fig = go.Figure()
+
+        dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, '#A0522D', 'Leva stranica')
+        dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, '#CD853F', 'Desna stranica')
+
+        if "Vsi elementi" in nacin_h_3d:
+            globina_stropa_poda = depth_3d
+        else:
+            globina_stropa_poda = depth_3d - oh_3d
+
+        dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
+        dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
+
+        hrbelt_xmin = d_3d - gutora_3d
+        hrbelt_xmax = w_3d - d_3d + gutora_3d
+        hrbelt_y_zacetek = depth_3d - ouz_3d
+        hrbelt_y_konec = depth_3d - ouz_3d + 5  
+        
+        if "Vsi elementi" in nacin_h_3d:
+            hrbelt_zmin = d_3d - gutora_3d
+            hrbelt_zmax = h_3d - d_3d + gutora_3d
+        else:
+            hrbelt_zmin = 0
+            hrbelt_zmax = h_3d
+
+        dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
+
+        if st_polic_3d > 0:
+            notranja_visina = h_3d - (2 * d_3d)
+            korak_visine = notranja_visina / (st_polic_3d + 1)
+            sirina_kosa = w_3d - (2 * d_3d)
+            sirina_police = sirina_kosa - zp_3d
+            
+            globina_police_3d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
+            zacetek_y_police = depth_3d - gutora_3d - opg_3d - globina_police_3d
+            x_zacetek = d_3d + (zp_3d / 2)
+
+            for p_idx in range(st_polic_3d):
+                z_pos = d_3d + (p_idx + 1) * korak_visine
+                dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police_3d, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
+
+        fig.update_layout(
+            scene=dict(
+                xaxis_title='Širina (mm)',
+                yaxis_title='Globina (mm)',
+                zaxis_title='Višina (mm)',
+                aspectmode='data',
+                camera=dict(eye=dict(x=1.5, y=1.8, z=1.2))
+            ),
+            margin=dict(l=0, r=0, b=0, t=0),
+            height=550,
+            dragmode='orbit'
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+        st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
+
+    with st.expander("📐 Pokaži delavniške 2D tehnične risbe s kotami (Spredaj, Stranski prerez, Od zgoraj)"):
+        tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
+        
+        with tab_spredaj:
+            st.write("Delavniška tehnična risba omarice spredaj z vsemi rdečimi kotami in višinami polic.")
+            fig_front = go.Figure()
+            fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
+            fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
+            fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#DEB887", opacity=0.8)
+            fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.8)
+            
+            if st_polic_3d > 0:
+                notranja_visina = h_3d - (2 * d_3d)
+                korak_visine = notranja_visina / (st_polic_3d + 1)
+                sirina_kosa = w_3d - (2 * d_3d)
+                sirina_police = sirina_kosa - zp_3d
+                x_zacetek = d_3d + (zp_3d / 2)
+                for p_idx in range(st_polic_3d):
+                    z_pos = d_3d + (p_idx + 1) * korak_visine
+                    fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#20B2AA", opacity=0.8)
+                    narisi_koto_vertikalno(fig_front, 0, z_pos, w_3d + 20 + (p_idx * 45), f"P{p_idx+1}: {int(z_pos)}mm")
+
+            narisi_koto_horizontalno(fig_front, 0, w_3d, h_3d + 35, f"Širina: {w_3d} mm")
+            narisi_koto_vertikalno(fig_front, 0, h_3d, -45, f"Višina: {
