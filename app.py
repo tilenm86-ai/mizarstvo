@@ -56,9 +56,9 @@ nacin_hrbta = st.sidebar.selectbox(
 
 globina_utora = st.sidebar.slider("Globina utora / falca (mm)", min_value=4, max_value=10, value=6)
 
-# Odmik stropa/poda je možen SAMO takrat, ko so utori samo v stranicah!
+# Odmik stropa/poda je možen SAMO takrat, ko so utori samo v stranicah (sedaj do 30 mm)
 if "Samo stranice" in nacin_hrbta:
-    odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=15, value=5, key="oh_in")
+    odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=30, value=5, key="oh_in")
 else:
     odmik_hrbta = 0  # Ko so vsi v falcu, ni odmika
 
