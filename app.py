@@ -198,10 +198,12 @@ if len(st.session_state.elements) > 0:
             showscale=False
         ))
 
+    # --- POPRAVLJENE FUNKCIJE ZA KOTE Z ŠIRŠO PREKINITVIJO ČRTE ---
     def narisi_koto_horizontalno(fig, x_start, x_end, y_pos, tekst):
         sredina = (x_start + x_end) / 2
-        fig.add_trace(go.Scatter(x=[x_start, sredina - 30], y=[y_pos, y_pos], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
-        fig.add_trace(go.Scatter(x=[sredina + 30, x_end], y=[y_pos, y_pos], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
+        # Pustimo večji prazen prostor v sredini (od -45 do +45), da gre pisava nesmetano vmes
+        fig.add_trace(go.Scatter(x=[x_start, sredina - 45], y=[y_pos, y_pos], mode="lines", line_color="red", line_width=1.5, showlegend=False))
+        fig.add_trace(go.Scatter(x=[sredina + 45, x_end], y=[y_pos, y_pos], mode="lines", line_color="red", line_width=1.5, showlegend=False))
         fig.add_trace(go.Scatter(
             x=[sredina], y=[y_pos],
             mode="text",
@@ -210,13 +212,14 @@ if len(st.session_state.elements) > 0:
             textposition="middle center",
             showlegend=False
         ))
-        fig.add_trace(go.Scatter(x=[x_start, x_start], y=[y_pos - 5, y_pos + 5], mode="lines", line=dict(color="red", width=1), showlegend=False))
-        fig.add_trace(go.Scatter(x=[x_end, x_end], y=[y_pos - 5, y_pos + 5], mode="lines", line=dict(color="red", width=1), showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_start, x_start], y=[y_pos - 5, y_pos + 5], mode="lines", line_color="red", line_width=1, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_end, x_end], y=[y_pos - 5, y_pos + 5], mode="lines", line_color="red", line_width=1, showlegend=False))
 
     def narisi_koto_vertikalno(fig, y_start, y_end, x_pos, tekst):
         sredina = (y_start + y_end) / 2
-        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[y_start, sredina - 25], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
-        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[sredina + 25, y_end], mode="lines", line=dict(color="red", width=1.5), showlegend=False))
+        # Širša prekinitev navpične črte, da besedilo nikoli ni prečrtano
+        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[y_start, sredina - 35], mode="lines", line_color="red", line_width=1.5, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[sredina + 35, y_end], mode="lines", line_color="red", line_width=1.5, showlegend=False))
         fig.add_trace(go.Scatter(
             x=[x_pos], y=[sredina],
             mode="text",
@@ -225,8 +228,8 @@ if len(st.session_state.elements) > 0:
             textposition="middle center",
             showlegend=False
         ))
-        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_start, y_start], mode="lines", line=dict(color="red", width=1), showlegend=False))
-        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_end, y_end], mode="lines", line=dict(color="red", width=1), showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_start, y_start], mode="lines", line_color="red", line_width=1, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_end, y_end], mode="lines", line_color="red", line_width=1, showlegend=False))
 
     with st.expander("🧊 Pokaži 3D predogled omare (Z možnostjo približevanja in vrtenja)"):
         izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="select_3d_index")
@@ -341,122 +344,3 @@ if len(st.session_state.elements) > 0:
             fig_side = go.Figure()
             fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line_color=s_c, line_width=2, fillcolor=f_c, opacity=0.4)
             
-            fig_side.add_shape(type="rect", x0=0, y0=0, x1=globina_stropa_poda, y1=d_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#DEB887", opacity=0.8)
-            fig_side.add_shape(type="rect", x0=0, y0=h_3d-d_3d, x1=globina_stropa_poda, y1=h_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#F4A460", opacity=0.8)
-            
-            ut_y_zacetek = depth_3d - ouz_3d
-            if "Vsi elementi" in nacin_h_3d:
-                ut_z_min = d_3d - gutora_3d
-                ut_z_max = h_3d - d_3d + gutora_3d
-            else:
-                ut_z_min = 0
-                ut_z_max = h_3d
-
-            fig_side.add_shape(type="rect", x0=ut_y_zacetek, y0=ut_z_min,
-                             x1=ut_y_zacetek + debelina_utora, y1=ut_z_max,
-                             line_color="blue", line_width=1.5, line_dash="dash", fillcolor="#B0C4DE", opacity=0.8)
-
-            if st_polic_3d > 0:
-                notranja_visina = h_3d - (2 * d_3d)
-                korak_visine = notranja_visina / (st_polic_3d + 1)
-                globina_police_2d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
-                zacetek_y_pol_2d = ut_y_zacetek - opg_3d - globina_police_2d
-
-                for p_idx in range(st_polic_3d):
-                    z_pos = d_3d + (p_idx + 1) * korak_visine
-                    fig_side.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos, x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#20B2AA", opacity=0.8)
-
-            narisi_koto_horizontalno(fig_side, 0, depth_3d, h_3d + 35, "Globina: " + str(depth_3d) + " mm")
-            narisi_koto_vertikalno(fig_side, 0, h_3d, -45, "Višina: " + str(h_3d) + " mm")
-            
-            narisi_koto_horizontalno(fig_side, ut_y_zacetek, depth_3d, -20, "Utor: " + str(ouz_3d) + " mm")
-            if st_polic_3d > 0:
-                narisi_koto_horizontalno(fig_side, zacetek_y_pol_2d, ut_y_zacetek, h_3d / 2, "Odmik police: " + str(opg_3d) + " mm")
-
-            fig_side.update_layout(
-                xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=480,
-                xaxis=dict(range=[-70, depth_3d + 70]), yaxis=dict(range=[-50, h_3d + 70], scaleanchor="x", scaleratio=1), showlegend=False
-            )
-            st.plotly_chart(fig_side, use_container_width=True)
-
-        with tab_zgoraj:
-            st.write("Tloris omare od zgoraj s širinskimi in globinskimi rdečimi kotami ter utorom.")
-            fig_top = go.Figure()
-            fig_top.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=depth_3d, line_color=s_c, line_width=2, fillcolor=f_c, opacity=0.7)
-            fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line_color=s_c, line_width=2, fillcolor=f_c, opacity=0.7)
-            fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#F4A460", opacity=0.7)
-            fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line_color="blue", line_width=1.5, line_dash="dash", fillcolor="#B0C4DE", opacity=0.8)
-
-            narisi_koto_horizontalno(fig_top, 0, w_3d, depth_3d + 35, "Širina: " + str(w_3d) + " mm")
-            narisi_koto_vertikalno(fig_top, 0, depth_3d, -45, "Globina: " + str(depth_3d) + " mm")
-
-            fig_top.update_layout(
-                xaxis_title="Širina (mm)", yaxis_title="Globina (mm)", height=480,
-                xaxis=dict(range=[-70, w_3d + 70]), yaxis=dict(range=[-50, depth_3d + 70], scaleanchor="x", scaleratio=1), showlegend=False
-            )
-            st.plotly_chart(fig_top, use_container_width=True)
-
-    st.divider()
-
-    if st.button("🧮 Izračunaj skupni krojni list in robne trakove", type="primary", key="gumb_izracun"):
-        vsi_kosi = []
-        for el in st.session_state.elements:
-            d = el.get("Debelina", 18)
-            s = el.get("Širina", 800)
-            v = el.get("Višina", 720)
-            g = el.get("Globina", 550)
-            naziv = el.get("Naziv", "Element")
-            st_polic = el.get("Police", 0)
-            ima_v = el.get("Vrata", False)
-            
-            nacin_h = el.get("Nacin_Hrbta", "")
-            gutora = el.get("Globina_Utora", 6)
-            oh = el.get("Odmik_Hrbta", 0)
-            zp = el.get("Zracnost_Polic", 2)
-            opg = el.get("Odmik_Police_G", 25)
-            zracnost_v_hrbta = el.get("Zracnost_Visina_Hrbta", 2)
-
-            izbrani_r_str = el.get("Izbrani_Robovi_Stranice", [])
-            abs_s = ", ".join(izbrani_r_str) if izbrani_r_str else "Brez"
-
-            izbrani_r_sp = el.get("Izbrani_Robovi_StropPod", [])
-            abs_sp = ", ".join(izbrani_r_sp) if izbrani_r_sp else "Brez"
-
-            abs_p = "1x sprednji rob" if el.get("ABS_Polica") == "Da (1x rob)" else "Brez"
-            abs_v = "Vse 4 strani" if el.get("ABS_Vrata") == "Vse 4 strani" else "Brez"
-
-            vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v, "Robni trak (ABS)": abs_s})
-            
-            sirina_kosa = s - (2 * d)
-            if "Vsi elementi" in nacin_h:
-                globina_stropa_poda = g + gutora
-            else:
-                globina_stropa_poda = g - oh
-
-            vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
-            
-            zracnost_sirina_hrbta = 2  
-            
-            if "Samo stranice" in nacin_h:
-                sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
-                visina_hrbta = v - zracnost_v_hrbta
-            else:
-                sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
-                visina_hrbta = (v - (2 * d)) + (2 * gutora) - zracnost_v_hrbta
-                
-            vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta, "Robni trak (ABS)": "Brez"})
-            
-            if st_polic > 0:
-                sirina_police = sirina_kosa - zp
-                globina_police = g - gutora - opg - oh
-                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
-            
-            if ima_v:
-                visina_vrat = v - 4
-                sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
-                strop_kosov = 2 if s > 600 else 1
-                vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
-
-        st.success("Krojni list z vsemi nastavitvami uspešno izračunan!")
-        df_skupaj = pd.DataFrame(vsi_kosi)
-        st.dataframe(df_skupaj, use_container_width=True)
