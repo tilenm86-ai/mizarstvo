@@ -200,33 +200,33 @@ if len(st.session_state.elements) > 0:
 
     def narisi_koto_horizontalno(fig, x_start, x_end, y_pos, tekst):
         sredina = (x_start + x_end) / 2
-        fig.add_trace(go.Scatter(x=[x_start, sredina - 45], y=[y_pos, y_pos], mode="lines", line_color="red", line_width=1.5, showlegend=False))
-        fig.add_trace(go.Scatter(x=[sredina + 45, x_end], y=[y_pos, y_pos], mode="lines", line_color="red", line_width=1.5, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_start, sredina - 45], y=[y_pos, y_pos], mode="lines", line={"color": "red", "width": 1.5}, showlegend=False))
+        fig.add_trace(go.Scatter(x=[sredina + 45, x_end], y=[y_pos, y_pos], mode="lines", line={"color": "red", "width": 1.5}, showlegend=False))
         fig.add_trace(go.Scatter(
             x=[sredina], y=[y_pos],
             mode="text",
             text=[tekst],
-            textfont=dict(color="red", size=11),
+            textfont={"color": "red", "size": 11},
             textposition="middle center",
             showlegend=False
         ))
-        fig.add_trace(go.Scatter(x=[x_start, x_start], y=[y_pos - 5, y_pos + 5], mode="lines", line_color="red", line_width=1, showlegend=False))
-        fig.add_trace(go.Scatter(x=[x_end, x_end], y=[y_pos - 5, y_pos + 5], mode="lines", line_color="red", line_width=1, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_start, x_start], y=[y_pos - 5, y_pos + 5], mode="lines", line={"color": "red", "width": 1}, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_end, x_end], y=[y_pos - 5, y_pos + 5], mode="lines", line={"color": "red", "width": 1}, showlegend=False))
 
     def narisi_koto_vertikalno(fig, y_start, y_end, x_pos, tekst):
         sredina = (y_start + y_end) / 2
-        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[y_start, sredina - 35], mode="lines", line_color="red", line_width=1.5, showlegend=False))
-        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[sredina + 35, y_end], mode="lines", line_color="red", line_width=1.5, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[y_start, sredina - 35], mode="lines", line={"color": "red", "width": 1.5}, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[sredina + 35, y_end], mode="lines", line={"color": "red", "width": 1.5}, showlegend=False))
         fig.add_trace(go.Scatter(
             x=[x_pos], y=[sredina],
             mode="text",
             text=[tekst],
-            textfont=dict(color="red", size=11),
+            textfont={"color": "red", "size": 11},
             textposition="middle center",
             showlegend=False
         ))
-        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_start, y_start], mode="lines", line_color="red", line_width=1, showlegend=False))
-        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_end, y_end], mode="lines", line_color="red", line_width=1, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_start, y_start], mode="lines", line={"color": "red", "width": 1}, showlegend=False))
+        fig.add_trace(go.Scatter(x=[x_pos - 5, x_pos + 5], y=[y_end, y_end], mode="lines", line={"color": "red", "width": 1}, showlegend=False))
 
     with st.expander("🧊 Pokaži 3D predogled omare (Z možnostjo približevanja in vrtenja)"):
         izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="select_3d_index")
@@ -286,11 +286,9 @@ if len(st.session_state.elements) > 0:
                 dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police_3d, z_pos, z_pos + d_3d, '#20B2AA', 'Polica ' + str(p_idx+1))
 
         fig.update_layout(
-            scene=dict(
-                xaxis_title='Širina (mm)',
-                yaxis_title='Globina (mm)',
-                zaxis_title='Višina (mm)',
-                aspectmode='data',
-                camera=dict(eye=dict(x=1.5, y=1.8, z=1.2))
-            ),
-            margin=dict(l=0
+            scene={
+                'xaxis_title': 'Širina (mm)',
+                'yaxis_title': 'Globina (mm)',
+                'zaxis_title': 'Višina (mm)',
+                'aspectmode': 'data',
+                'camera': {'eye': {'x': 
