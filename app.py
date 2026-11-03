@@ -79,7 +79,6 @@ odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine om
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Izbira ABS robov (tapni za izbor):**")
 
-# Stranice
 izbrani_robovi_stranice = st.sidebar.multiselect(
     "Stranica - ABS robovi", 
     ["Sprednji", "Zgornji", "Spodnji", "Zadnji"], 
@@ -87,7 +86,6 @@ izbrani_robovi_stranice = st.sidebar.multiselect(
     key="ms_stranica"
 )
 
-# Strop / Pod (dodan multiselect za sprednji in zadnji rob)
 izbrani_robovi_strop_pod = st.sidebar.multiselect(
     "Strop / Pod - ABS robovi", 
     ["Sprednji", "Zadnji"], 
@@ -216,7 +214,7 @@ if len(st.session_state.elements) > 0:
         hrbelt_zmin = 0
         hrbelt_zmax = h_3d
 
-    dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbbelt_zmin if 'hrbelt_zmin' in locals() else 0, hrbelt_zmax if 'hrbelt_zmax' in locals() else h_3d, '#B0C4DE', 'Hrbet (5mm)')
+    dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
 
     # 4. Police (zadaj pri hrbtu)
     if st_polic_3d > 0:
