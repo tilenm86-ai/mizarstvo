@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 st.title("🪚 Mizarski Kalkulator: Projekt z vizualnimi nastavitvami")
-st.write("Prilagodi mizarske tolerance, dodajaj omarice in sproti preverjaj mere ter shemo.")
+st.write("Prilagodi mizarske tolerance, dodajaj omarice in sproti preverjaj mere ter krojni list.")
 
 # --- STRANSKI MENI ZA NASTAVITVE IN VNOS ---
 st.sidebar.header("⚙️ Nastavitve toleranc in odmikov")
@@ -55,7 +55,16 @@ if len(st.session_state.elements) > 0:
     for i, el in enumerate(st.session_state.elements):
         c1, c2 = st.columns([5, 1])
         with c1:
-            st.write(f"**{i+1}. {el['Naziv']}** ({el['Tip']}) — Š: {el['Širina']} mm, V: {el['Višina']} mm, G: {el['Globina']} mm | Police: {el['Police']}, Vrata: {'Da' if el['Vrata'] else 'Ne'}")
+            # Varno branje parametrov za prikaz, če kakšnega manjka v starih zapisih
+            naziv_prikaz = el.get('Naziv', 'Omarica')
+            tip_prikaz = el.get('Tip', 'Spodnja omarica')
+            s_prikaz = el.get('Širina', 0)
+            v_prikaz = el.get('Višina', 0)
+            g_prikaz = el.get('Globina', 0)
+            pol_prikaz = el.get('Police', 0)
+            vr_prikaz = 'Da' if el.get('Vrata', True) else 'Ne'
+            
+            st.write(f"**{i+1}. {naziv_prikaz}** ({tip_prikaz}) — Š: {s_prikaz} mm, V: {v_prikaz} mm, G: {g_prikaz} mm | Police: {pol_prikaz}, Vrata: {vr_prikaz}")
         with c2:
             if st.button("❌", key=f"del_{i}"):
                 st.session_state.elements.pop(i)
@@ -67,50 +76,51 @@ if len(st.session_state.elements) > 0:
 
     st.divider()
 
-    # Prikaz sheme in izračun
-    st.subheader("📐 Vizualna shema konstrukcije (prerez omare)")
-    st.info(f"Trenutna pravila: Stranici sta polne globine ({globina} mm). Strop in pod sta zadaj krajša za {odmik_hrbta} mm. Police so krajše v globino za {odmik_police_globina} mm.")
+    st.subheader("📐 Pravila konstrukcije")
+    st.info(f"Trenutna pravila: Stranici sta polne globine. Strop in pod sta zadaj krajša za nastavljen odmik. Police so prilagojene v globino in širino.")
 
     if st.button("🧮 Izračunaj skupni krojni list za celo kuhinjo", type="primary"):
         vsi_kosi = []
         for el in st.session_state.elements:
-            d = el["Debelina"]
-            s = el["Širina"]
-            v = el["Visina"]
-            g = el["Globina"]
-            oh = el["Odmik_Hrbta"]
-            zp = el["Zracnost_Polic"]
-            opg = el["Odmik_Police_G"]
-            naziv = el["Naziv"]
+            d = el.get("Debelina", 18)
+            s = el.get("Širina", 800)
+            v = el.get("Višina", 720)
+            g = el.get("Globina", 550)
+            oh = el.get("Odmik_Hrbta", 5)
+            zp = el.get("Zracnost_Polic", 2)
+            opg = el.get("Odmik_Police_G", 20)
+            naziv = el.get("Naziv", "Omarica")
+            st_polic = el.get("Police", 0)
+            ima_vrata = el.get("Vrata", True)
 
             # 1. Stranici
             vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v})
             
-            # 2. Strop in pod (krajša zadaj za nastavljen odmik hrbta)
+            # 2. Strop in pod (krajša zadaj za odmik hrbta)
             sirina_kosa = s - (2 * d)
             globina_stropa_poda = g - oh
             vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa})
             
-            # 3. Hrbtni del (5 mm v utor/prislon)
+            # 3. Hrbtni del (MDF/HDF 5mm)
             sirina_hrbta = s - (2 * d)
             visina_hrbta = v - (2 * d)
             vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta})
             
             # 4. Police
-            if el["Police"] > 0:
+            if st_polic > 0:
                 sirina_police = sirina_kosa - zp
                 globina_police = g - opg
-                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": el["Police"], "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police})
+                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police})
             
             # 5. Vrata
-            if el["Vrata"]:
+            if ima_vrata:
                 visina_vrat = v - 4
                 sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
                 strop_kosov = 2 if s > 600 else 1
                 vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat})
 
-        st.success("Skupni krojni list z vašimi nastavitvami uspešno izračunan!")
+        st.success("Skupni krojni list uspešno izračunan!")
         df_skupaj = pd.DataFrame(vsi_kosi)
         st.dataframe(df_skupaj, use_container_width=True)
 else:
-    st.info("V projektu še ni omar. Uporabite nastavitve levo, da dodate prvo omaro.")
+    st.info("V projektu še ni omar. Uporabite nastavitve v meniju levo, da dodate prvo omaro.")
