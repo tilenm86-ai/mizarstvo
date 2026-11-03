@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
-st.write("Izberi prostor, vnesi omaro, določi ABS robove ter preveri 3D model s prikazom debelin elementov.")
+st.write("Izberi prostor, vnesi omaro, določi način vgradnje hrbta in ABS robove.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
 st.sidebar.header("📁 Vrsta projekta")
@@ -49,11 +49,15 @@ with col3:
 st.sidebar.subheader("⚙️ Konstrukcija hrbta in ABS robovi")
 nacin_hrbta = st.sidebar.selectbox(
     "Vgradnja hrbta", 
-    ["Prislonjen zadaj (brez utora)", "V utoru / falcu (stranice in strop/pod)"]
+    [
+        "Prislonjen zadaj (brez utora)", 
+        "V utoru: Vsi elementi (stranice, strop, pod)", 
+        "V utoru: Samo stranice (strop in pod brez utora)"
+    ]
 )
 
 globina_utora = 6
-if "utor" in nacin_hrbta:
+if "V utoru" in nacin_hrbta:
     globina_utora = st.sidebar.slider("Globina utora / falca (mm)", min_value=4, max_value=10, value=6)
 
 odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=15, value=5, key="oh_in")
@@ -129,7 +133,7 @@ if len(st.session_state.elements) > 0:
 
     st.divider()
 
-    # --- POMOŽNA FUNKCIJA ZA 3D MASIVNI KVADER (Z DEBELINO) ---
+    # --- POMOŽNA FUNKCIJA ZA 3D MASIVNI KVADER ---
     def dodaj_kvader(fig, x_min, x_max, y_min, y_max, z_min, z_max, color, name):
         fig.add_trace(go.Mesh3d(
             x=[x_min, x_max, x_max, x_min, x_min, x_max, x_max, x_min],
@@ -145,7 +149,7 @@ if len(st.session_state.elements) > 0:
         ))
 
     # --- 3D MASIVNI PRIKAZ ---
-    st.subheader("🧊 3D predogled elementa (Z vsemi debelinami materialov)")
+    st.subheader("🧊 3D predogled elementa")
     izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"])
     
     el_3d = st.session_state.elements[izbran_indeks]
@@ -157,28 +161,33 @@ if len(st.session_state.elements) > 0:
     opg_3d = el_3d["Odmik_Police_G"]
     zp_3d = el_3d["Zracnost_Polic"]
     nacin_h_3d = el_3d["Nacin_Hrbta"]
+    g_utora_3d = el_3d["Globina_Utora"]
 
     fig = go.Figure()
 
-    # 1. Leva stranica (masiven blok)
+    # 1. Leva in desna stranica
     dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, '#A0522D', 'Leva stranica')
-
-    # 2. Desna stranica (masiven blok)
     dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, '#CD853F', 'Desna stranica')
 
-    # 3. Pod (med stranicama)
-    globina_stropa_poda = depth_3d - el_3d["Odmik_Hrbta"]
-    dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
+    # 2. Pod in strop (če je utor v vseh elementih, sežeta globlje za globino utora)
+    if "Vsi elementi" in nacin_h_3d:
+        globina_stropa_poda = depth_3d  # seže do konca utora
+    else:
+        globina_stropa_poda = depth_3d - el_3d["Odmik_Hrbta"]
 
-    # 4. Strop (med stranicama)
+    dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
 
-    # 5. Hrbet (HDF 5mm zadaj)
-    if "utor" in nacin_h_3d:
-        hrbelt_xmin = d_3d - el_3d["Globina_Utora"]
-        hrbelt_xmax = w_3d - d_3d + el_3d["Globina_Utora"]
-        hrbelt_zmin = -el_3d["Globina_Utora"]
-        hrbelt_zmax = h_3d + el_3d["Globina_Utora"]
+    # 3. Hrbet
+    if "V utoru" in nacin_h_3d:
+        hrbelt_xmin = d_3d - g_utora_3d
+        hrbelt_xmax = w_3d - d_3d + g_utora_3d
+        if "Vsi elementi" in nacin_h_3d:
+            hrbelt_zmin = -g_utora_3d
+            hrbelt_zmax = h_3d + g_utora_3d
+        else:
+            hrbelt_zmin = d_3d
+            hrbelt_zmax = h_3d - d_3d
     else:
         hrbelt_xmin = d_3d
         hrbelt_xmax = w_3d - d_3d
@@ -187,14 +196,13 @@ if len(st.session_state.elements) > 0:
 
     dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, depth_3d - 5, depth_3d, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
 
-    # 6. Police (pomaknjene nazaj k hrbtu)
+    # 4. Police
     if st_polic_3d > 0:
         notranja_visina = h_3d - (2 * d_3d)
         korak_visine = notranja_visina / (st_polic_3d + 1)
         sirina_kosa = w_3d - (2 * d_3d)
         sirina_police = sirina_kosa - zp_3d
-        
-        zacetek_y_police = opg_3d
+        zacetek_y_police = 0
         globina_police = depth_3d - opg_3d - el_3d["Odmik_Hrbta"]
         x_zacetek = d_3d + (zp_3d / 2)
 
@@ -248,15 +256,24 @@ if len(st.session_state.elements) > 0:
             # 1. Stranici
             vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v, "Robni trak (ABS)": abs_s})
             
-            # 2. Strop in pod
+            # 2. Strop in pod (Če je utor v vseh elementih, je globina večja za globino utora)
             sirina_kosa = s - (2 * d)
-            globina_stropa_poda = g - oh
+            if "Vsi elementi" in nacin_h:
+                globina_stropa_poda = g + g_utora  # daljši za razrez v utor
+            elif "Samo stranice" in nacin_h or "Prislonjen" in nacin_h:
+                globina_stropa_poda = g - oh
+            else:
+                globina_stropa_poda = g
+
             vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
             
             # 3. Hrbtni del
-            if "utor" in nacin_h:
+            if "Vsi elementi" in nacin_h:
                 sirina_hrbta = s - (2 * d) + (2 * g_utora)
                 visina_hrbta = v + (2 * g_utora)
+            elif "Samo stranice" in nacin_h:
+                sirina_hrbta = s - (2 * d) + (2 * g_utora)
+                visina_hrbta = v - (2 * d)
             else:
                 sirina_hrbta = s - (2 * d)
                 visina_hrbta = v - (2 * d)
