@@ -62,7 +62,6 @@ odmik_utora_zadaj = st.sidebar.slider("Odmik utora od zadnjega roba (mm)", min_v
 debelina_utora = st.sidebar.slider("Debelina utora (širina reza v mm)", min_value=4, max_value=8, value=6, key="input_deb_utora")
 globina_utora = st.sidebar.slider("Globina utora (v globino materiala v mm)", min_value=4, max_value=15, value=6, key="input_glob_utora")
 
-# Dodan drsnik za zračnost pri višini hrbta
 zracnost_visina_hrbta = st.sidebar.slider("Zračnost za višino hrbta (mm)", min_value=0, max_value=10, value=2, key="input_zracnost_v_hrbta")
 
 preostanek_mesa = debelina - globina_utora
@@ -189,6 +188,7 @@ if len(st.session_state.elements) > 0:
     ouz_3d = el_3d.get("Odmik_Utora_Zadaj", 10)
     gutora_3d = el_3d["Globina_Utora"]
     oh_3d = el_3d["Odmik_Hrbta"]
+    zrac_v_3d = el_3d.get("Zracnost_Visina_Hrbta", 2)
 
     fig = go.Figure()
 
@@ -209,8 +209,9 @@ if len(st.session_state.elements) > 0:
     hrbelt_y_konec = depth_3d - ouz_3d + 5  
     
     if "Vsi elementi" in nacin_h_3d:
-        hrbelt_zmin = -gutora_3d
-        hrbelt_zmax = h_3d + gutora_3d
+        # Pravilen uvod hrbta v utora stropa in poda
+        hrbelt_zmin = d_3d - gutora_3d
+        hrbelt_zmax = h_3d - d_3d + gutora_3d
     else:
         hrbelt_zmin = 0
         hrbelt_zmax = h_3d
@@ -281,8 +282,16 @@ if len(st.session_state.elements) > 0:
             fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.6)
             
             ut_y_zacetek = depth_3d - ouz_3d
-            fig_side.add_shape(type="rect", x0=ut_y_zacetek, y0=-gutora_3d if "Vsi elementi" in nacin_h_3d else 0,
-                             x1=ut_y_zacetek + debelina_utora, y1=h_3d + (gutora_3d if "Vsi elementi" in nacin_h_3d else 0),
+            
+            if "Vsi elementi" in nacin_h_3d:
+                ut_z_min = d_3d - gutora_3d
+                ut_z_max = h_3d - d_3d + gutora_3d
+            else:
+                ut_z_min = 0
+                ut_z_max = h_3d
+
+            fig_side.add_shape(type="rect", x0=ut_y_zacetek, y0=ut_z_min,
+                             x1=ut_y_zacetek + debelina_utora, y1=ut_z_max,
                              line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
 
             if st_polic_3d > 0:
@@ -357,13 +366,14 @@ if len(st.session_state.elements) > 0:
 
             vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
             
-            # 3. Hrbtni del (točna formula z uporabniško nastavljivo zračnostjo po višini)
-            zracnost_sirina_hrbta = 2  # fiksna zračnost širine za utor
+            # 3. Hrbtni del (točna formula: višina - 2x debelina + globina utora zgoraj in spodaj, minus zračnost)
+            zracnost_sirina_hrbta = 2  
             
             if "Samo stranice" in nacin_h:
                 sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
                 visina_hrbta = v - zracnost_v_hrbta
             else:
+                # Širina in višina omare minus 2x debelina + 2x globina utora - zračnost
                 sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
                 visina_hrbta = (v - (2 * d)) + (2 * gutora) - zracnost_v_hrbta
                 
