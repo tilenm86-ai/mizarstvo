@@ -45,7 +45,7 @@ with col2:
 with col3:
     globina = st.number_input("Globina (mm)", value=550, step=10)
 
-# --- 3. KORAK: NASTAVITVE HRBTA IN ROBOV (ABS) ---
+# --- 3. KORAK: NASTAVITve HRBTA IN ROBOV (ABS) ---
 st.sidebar.subheader("⚙️ Konstrukcija hrbta in ABS robovi")
 nacin_hrbta = st.sidebar.selectbox(
     "Vgradnja hrbta", 
@@ -187,12 +187,14 @@ if len(st.session_state.elements) > 0:
 
     dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, depth_3d - 5, depth_3d, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
 
-    # 6. Police (z debelino)
+    # 6. Police (pomaknjene nazaj proti hrbtu z upoštevanjem opg_3d)
     if st_polic_3d > 0:
         notranja_visina = h_3d - (2 * d_3d)
         korak_visine = notranja_visina / (st_polic_3d + 1)
         sirina_kosa = w_3d - (2 * d_3d)
         sirina_police = sirina_kosa - zp_3d
+        
+        # Police so pomaknjene od spredaj nazaj (zajemajo globino od 0 do globina_police)
         globina_police = depth_3d - opg_3d
         x_zacetek = d_3d + (zp_3d / 2)
 
