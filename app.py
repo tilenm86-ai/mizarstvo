@@ -240,7 +240,12 @@ if len(st.session_state.elements) > 0:
                     z_pos = d_3d + (p_idx + 1) * korak_visine
                     fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#20B2AA", opacity=0.8)
 
-            fig_front.update_layout(xaxis_title="Širina (mm)", yaxis_title="Višina (mm)", height=400, showlegend=False)
+            fig_front.update_layout(
+                xaxis_title="Širina (mm)", yaxis_title="Višina (mm)", height=450,
+                xaxis={"range": [-20, w_3d + 20]},
+                yaxis={"scaleanchor": "x", "scaleratio": 1, "range": [-20, h_3d + 20]},
+                showlegend=False
+            )
             st.plotly_chart(fig_front, use_container_width=True)
 
         with tab_stran:
@@ -263,7 +268,12 @@ if len(st.session_state.elements) > 0:
                     z_pos = d_3d + (p_idx + 1) * korak_visine
                     fig_side.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos, x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#20B2AA", opacity=0.8)
 
-            fig_side.update_layout(xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=400, showlegend=False)
+            fig_side.update_layout(
+                xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=450,
+                xaxis={"range": [-20, depth_3d + 20]},
+                yaxis={"scaleanchor": "x", "scaleratio": 1, "range": [-20, h_3d + 20]},
+                showlegend=False
+            )
             st.plotly_chart(fig_side, use_container_width=True)
 
         with tab_zgoraj:
@@ -272,7 +282,13 @@ if len(st.session_state.elements) > 0:
             fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line_color=s_c, line_width=2, fillcolor=f_c, opacity=0.7)
             fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#F4A460", opacity=0.7)
             fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line_color="blue", line_width=1.5, line_dash="dash", fillcolor="#B0C4DE", opacity=0.8)
-            fig_top.update_layout(xaxis_title="Širina (mm)", yaxis_title="Globina (mm)", height=400, showlegend=False)
+            
+            fig_top.update_layout(
+                xaxis_title="Širina (mm)", yaxis_title="Globina (mm)", height=450,
+                xaxis={"range": [-20, w_3d + 20]},
+                yaxis={"scaleanchor": "x", "scaleratio": 1, "range": [-20, depth_3d + 20]},
+                showlegend=False
+            )
             st.plotly_chart(fig_top, use_container_width=True)
 
     st.divider()
