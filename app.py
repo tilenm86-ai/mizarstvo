@@ -392,4 +392,77 @@ if len(st.session_state.elements) > 0:
             fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line_color="blue", line_width=1.5, line_dash="dash", fillcolor="#B0C4DE", opacity=0.8)
 
             narisi_koto_horizontalno(fig_top, 0, w_3d, depth_3d + 35, "Širina: " + str(w_3d) + " mm")
-            narisi_koto_vertikalno(fig_top, 0
+            narisi_koto_vertikalno(fig_top, 0, depth_3d, -45, "Globina: " + str(depth_3d) + " mm")
+
+            fig_top.update_layout(
+                xaxis_title="Širina (mm)", 
+                yaxis_title="Globina (mm)", 
+                height=480,
+                showlegend=False
+            )
+            st.plotly_chart(fig_top, use_container_width=True)
+
+    st.divider()
+
+    if st.button("🧮 Izračunaj skupni krojni list in robne trakove", type="primary", key="gumb_izracun"):
+        vsi_kosi = []
+        for el in st.session_state.elements:
+            d = el.get("Debelina", 18)
+            s = el.get("Širina", 800)
+            v = el.get("Višina", 720)
+            g = el.get("Globina", 550)
+            naziv = el.get("Naziv", "Element")
+            st_polic = el.get("Police", 0)
+            ima_v = el.get("Vrata", False)
+            
+            nacin_h = el.get("Nacin_Hrbta", "")
+            gutora = el.get("Globina_Utora", 6)
+            oh = el.get("Odmik_Hrbta", 0)
+            zp = el.get("Zracnost_Polic", 2)
+            opg = el.get("Odmik_Police_G", 25)
+            zracnost_v_hrbta = el.get("Zracnost_Visina_Hrbta", 2)
+
+            izbrani_r_str = el.get("Izbrani_Robovi_Stranice", [])
+            abs_s = ", ".join(izbrani_r_str) if izbrani_r_str else "Brez"
+
+            izbrani_r_sp = el.get("Izbrani_Robovi_StropPod", [])
+            abs_sp = ", ".join(izbrani_r_sp) if izbrani_r_sp else "Brez"
+
+            abs_p = "1x sprednji rob" if el.get("ABS_Polica") == "Da (1x rob)" else "Brez"
+            abs_v = "Vse 4 strani" if el.get("ABS_Vrata") == "Vse 4 strani" else "Brez"
+
+            vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v, "Robni trak (ABS)": abs_s})
+            
+            sirina_kosa = s - (2 * d)
+            if "Vsi elementi" in nacin_h:
+                globina_stropa_poda = g + gutora
+            else:
+                globina_stropa_poda = g - oh
+
+            vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
+            
+            zracnost_sirina_hrbta = 2  
+            
+            if "Samo stranice" in nacin_h:
+                sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
+                visina_hrbta = v - zracnost_v_hrbta
+            else:
+                sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
+                visina_hrbta = (v - (2 * d)) + (2 * gutora) - zracnost_v_hrbta
+                
+            vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta, "Robni trak (ABS)": "Brez"})
+            
+            if st_polic > 0:
+                sirina_police = sirina_kosa - zp
+                globina_police = g - gutora - opg - oh
+                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
+            
+            if ima_v:
+                visina_vrat = v - 4
+                sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
+                strop_kosov = 2 if s > 600 else 1
+                vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
+
+        st.success("Krojni list z vsemi nastavitvami uspešno izračunan!")
+        df_skupaj = pd.DataFrame(vsi_kosi)
+        st.dataframe(df_skupaj, use_container_width=True)
