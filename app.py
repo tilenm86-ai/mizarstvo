@@ -188,7 +188,6 @@ if len(st.session_state.elements) > 0:
     ouz_3d = el_3d.get("Odmik_Utora_Zadaj", 10)
     gutora_3d = el_3d["Globina_Utora"]
     oh_3d = el_3d["Odmik_Hrbta"]
-    zrac_v_3d = el_3d.get("Zracnost_Visina_Hrbta", 2)
 
     fig = go.Figure()
 
@@ -209,7 +208,6 @@ if len(st.session_state.elements) > 0:
     hrbelt_y_konec = depth_3d - ouz_3d + 5  
     
     if "Vsi elementi" in nacin_h_3d:
-        # Pravilen uvod hrbta v utora stropa in poda
         hrbelt_zmin = d_3d - gutora_3d
         hrbelt_zmax = h_3d - d_3d + gutora_3d
     else:
@@ -248,18 +246,23 @@ if len(st.session_state.elements) > 0:
     st.plotly_chart(fig, use_container_width=True)
     st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
 
-    # --- 2D TEHNIČNI PREREZI (Z ZAVIHKI V DODATNEM PREDALČKU) ---
-    with st.expander("📐 Pokaži 2D tehnične poglede (Spredaj, Stranski prerez, Od zgoraj)"):
+    # --- 2D TEHNIČNI PREREZI (Z ČRTKANIMI ČRTAMI ZA STROP, POD IN POLICE) ---
+    with st.expander("📐 Pokaži 2D tehnične poglede (Spredaj, Stranski prerez, Od zgoraj s črtkanimi črtami)"):
         tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
         
+        # 1. SPREDAJ
         with tab_spredaj:
-            st.write("Skica omare gledano od spredaj (prikazuje stranice, strop, pod in police).")
+            st.write("Skica omare gledano od spredaj (z zarisom notranjih elementov in polic s črtkano črto).")
             fig_front = go.Figure()
+            # Stranici
             fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
             fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line=dict(color="#DEB887", width=2), fillcolor="#DEB887", opacity=0.8)
-            fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line=dict(color="#F4A460", width=2), fillcolor="#F4A460", opacity=0.8)
             
+            # Pod in strop (s črtkastim robom / poudarkom)
+            fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#DEB887", opacity=0.8)
+            fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.8)
+            
+            # Police s črtkano obrobo
             if st_polic_3d > 0:
                 notranja_visina = h_3d - (2 * d_3d)
                 korak_visine = notranja_visina / (st_polic_3d + 1)
@@ -268,7 +271,7 @@ if len(st.session_state.elements) > 0:
                 x_zacetek = d_3d + (zp_3d / 2)
                 for p_idx in range(st_polic_3d):
                     z_pos = d_3d + (p_idx + 1) * korak_visine
-                    fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line=dict(color="black", width=1), fillcolor="#20B2AA", opacity=0.9)
+                    fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#20B2AA", opacity=0.8)
 
             fig_front.update_layout(
                 xaxis_title="Širina (mm)", yaxis_title="Višina (mm)", height=400,
@@ -276,13 +279,13 @@ if len(st.session_state.elements) > 0:
             )
             st.plotly_chart(fig_front, use_container_width=True)
 
+        # 2. STRANI
         with tab_stran:
-            st.write("Stranski prerez omare (prikazuje globino, utor za hrbet in police).")
+            st.write("Stranski prerez omare (s črtkanimi črtami za utor in police).")
             fig_side = go.Figure()
             fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.6)
             
             ut_y_zacetek = depth_3d - ouz_3d
-            
             if "Vsi elementi" in nacin_h_3d:
                 ut_z_min = d_3d - gutora_3d
                 ut_z_max = h_3d - d_3d + gutora_3d
@@ -290,10 +293,12 @@ if len(st.session_state.elements) > 0:
                 ut_z_min = 0
                 ut_z_max = h_3d
 
+            # Utor s črtkano modro črto
             fig_side.add_shape(type="rect", x0=ut_y_zacetek, y0=ut_z_min,
                              x1=ut_y_zacetek + debelina_utora, y1=ut_z_max,
-                             line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
+                             line=dict(color="blue", width=1.5, dash="dash"), fillcolor="#B0C4DE", opacity=0.8)
 
+            # Police s črtkano obrobo od strani
             if st_polic_3d > 0:
                 notranja_visina = h_3d - (2 * d_3d)
                 korak_visine = notranja_visina / (st_polic_3d + 1)
@@ -302,7 +307,7 @@ if len(st.session_state.elements) > 0:
 
                 for p_idx in range(st_polic_3d):
                     z_pos = d_3d + (p_idx + 1) * korak_visine
-                    fig_side.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos, x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d, line=dict(color="black", width=1), fillcolor="#20B2AA", opacity=0.9)
+                    fig_side.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos, x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#20B2AA", opacity=0.8)
 
             fig_side.update_layout(
                 xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=400,
@@ -310,13 +315,18 @@ if len(st.session_state.elements) > 0:
             )
             st.plotly_chart(fig_side, use_container_width=True)
 
+        # 3. OD ZGORAJ (TLORIS)
         with tab_zgoraj:
-            st.write("Tloris omare gledano od zgoraj (prikazuje širino, globino in utor za hrbet).")
+            st.write("Tloris omare gledano od zgoraj (s črtkastimi linijami za hrbet in strop).")
             fig_top = go.Figure()
             fig_top.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
             fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line=dict(color="#F4A460", width=2), fillcolor="#F4A460", opacity=0.7)
-            fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
+            
+            # Strop s črtkanim robom
+            fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.7)
+            
+            # Hrbet s črtkano modro črto
+            fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line=dict(color="blue", width=1.5, dash="dash"), fillcolor="#B0C4DE", opacity=0.8)
 
             fig_top.update_layout(
                 xaxis_title="Širina (mm)", yaxis_title="Globina (mm)", height=400,
@@ -366,14 +376,13 @@ if len(st.session_state.elements) > 0:
 
             vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
             
-            # 3. Hrbtni del (točna formula: višina - 2x debelina + globina utora zgoraj in spodaj, minus zračnost)
+            # 3. Hrbtni del
             zracnost_sirina_hrbta = 2  
             
             if "Samo stranice" in nacin_h:
                 sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
                 visina_hrbta = v - zracnost_v_hrbta
             else:
-                # Širina in višina omare minus 2x debelina + 2x globina utora - zračnost
                 sirina_hrbta = (s - (2 * d)) + (2 * gutora) - zracnost_sirina_hrbta
                 visina_hrbta = (v - (2 * d)) + (2 * gutora) - zracnost_v_hrbta
                 
