@@ -100,9 +100,9 @@ zracnost_visina_hrbta = st.sidebar.slider("Zračnost za višino hrbta (mm)", min
 
 preostanek_mesa = debelina - globina_utora
 if preostanek_mesa < 4:
-    st.sidebar.warning(f"⚠️ Pozor! Zadaj za privijačenje ostane samo {preostanek_mesa} mm materiala.")
+    st.sidebar.warning("⚠️ Pozor! Zadaj za privijačenje ostane samo " + str(preostanek_mesa) + " mm materiala.")
 else:
-    st.sidebar.info(f"ℹ️ Zadaj za privijačenje ostane {preostanek_mesa} mm materiala.")
+    st.sidebar.info("ℹ️ Zadaj za privijačenje ostane " + str(preostanek_mesa) + " mm materiala.")
 
 if "Samo stranice" in nacin_hrbta:
     odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=30, value=5, key="input_odmik_hrbta")
@@ -156,9 +156,9 @@ if st.sidebar.button("💾 Shrani omaro v projekt", key="gumb_shrani"):
         "ABS_Polica": abs_polica_izbira,
         "ABS_Vrata": abs_vrata_izbira
     }]
-    st.sidebar.success(f"Posodobljeno: {ime_elementa}")
+    st.sidebar.success("Posodobljeno: " + ime_elementa)
 
-st.subheader(f"📋 Seznam elementov za projekt: {vrsta_projekta}")
+st.subheader("📋 Seznam elementov za projekt: " + vrsta_projekta)
 
 if len(st.session_state.elements) > 0:
     for i, el in enumerate(st.session_state.elements):
@@ -172,9 +172,9 @@ if len(st.session_state.elements) > 0:
             g_p = el.get('Globina', 0)
             pol_p = el.get('Police', 0)
             
-            st.write(f"**{i+1}. {naziv_p}** ({projekt_p} ➔ *{tip_p}*) — Š: {s_p} mm, V: {v_p} mm, G: {g_p} mm | Police: {pol_p}")
+            st.write("**" + str(i+1) + ". " + naziv_p + "** (" + projekt_p + " ➔ *" + tip_p + "*) — Š: " + str(s_p) + " mm, V: " + str(v_p) + " mm, G: " + str(g_p) + " mm | Police: " + str(pol_p))
         with c2:
-            if st.button("❌", key=f"del_{i}"):
+            if st.button("❌", key="del_" + str(i)):
                 st.session_state.elements = []
                 st.rerun()
 
@@ -283,7 +283,7 @@ if len(st.session_state.elements) > 0:
 
             for p_idx in range(st_polic_3d):
                 z_pos = d_3d + (p_idx + 1) * korak_visine
-                dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police_3d, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
+                dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police_3d, z_pos, z_pos + d_3d, '#20B2AA', 'Polica ' + str(p_idx+1))
 
         fig.update_layout(
             scene=dict(
@@ -307,21 +307,4 @@ if len(st.session_state.elements) > 0:
         with tab_spredaj:
             st.write("Delavniška tehnična risba omarice spredaj z vsemi rdečimi kotami in višinami polic.")
             fig_front = go.Figure()
-            fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#DEB887", opacity=0.8)
-            fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.8)
-            
-            if st_polic_3d > 0:
-                notranja_visina = h_3d - (2 * d_3d)
-                korak_visine = notranja_visina / (st_polic_3d + 1)
-                sirina_kosa = w_3d - (2 * d_3d)
-                sirina_police = sirina_kosa - zp_3d
-                x_zacetek = d_3d + (zp_3d / 2)
-                for p_idx in range(st_polic_3d):
-                    z_pos = d_3d + (p_idx + 1) * korak_visine
-                    fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#20B2AA", opacity=0.8)
-                    narisi_koto_vertikalno(fig_front, 0, z_pos, w_3d + 20 + (p_idx * 45), f"P{p_idx+1}: {int(z_pos)}mm")
-
-            narisi_koto_horizontalno(fig_front, 0, w_3d, h_3d + 35, f"Širina: {w_3d} mm")
-            narisi_koto_vertikalno(fig_front, 0, h_3d, -45, f"Višina: {
+            fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F",
