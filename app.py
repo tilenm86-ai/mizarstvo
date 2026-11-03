@@ -163,10 +163,7 @@ if len(st.session_state.elements) > 0:
         dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, "#A0522D", "Leva stranica")
         dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, "#CD853F", "Desna stranica")
 
-        if "Vsi elementi" in nacin_h_3d:
-            globina_stropa_poda = depth_3d
-        else:
-            globina_stropa_poda = depth_3d - oh_3d
+        globina_stropa_poda = depth_3d if "Vsi elementi" in nacin_h_3d else (depth_3d - oh_3d)
 
         dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, "#DEB887", "Pod")
         dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, "#F4A460", "Strop")
@@ -175,13 +172,8 @@ if len(st.session_state.elements) > 0:
         hrbelt_xmax = w_3d - d_3d + gutora_3d
         hrbelt_y_zacetek = depth_3d - ouz_3d
         hrbelt_y_konec = depth_3d - ouz_3d + 5  
-        
-        if "Vsi elementi" in nacin_h_3d:
-            hrbelt_zmin = d_3d - gutora_3d
-            hrbelt_zmax = h_3d - d_3d + gutora_3d
-        else:
-            hrbelt_zmin = 0
-            hrbelt_zmax = h_3d
+        hrbelt_zmin = (d_3d - gutora_3d) if "Vsi elementi" in nacin_h_3d else 0
+        hrbelt_zmax = (h_3d - d_3d + gutora_3d) if "Vsi elementi" in nacin_h_3d else h_3d
 
         dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbelt_zmin, hrbelt_zmax, "#B0C4DE", "Hrbet (5mm)")
 
