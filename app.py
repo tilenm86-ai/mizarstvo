@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
-st.write("Izberi prostor, vnesi omaro, določi način vgradnje hrbta (v utor) in ABS robove.")
+st.write("Izberi prostor, vnesi omaro, določi način vgradnje hrbta, ABS robove ter preveri 3D model.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
 vrsta_projekta = st.sidebar.selectbox(
@@ -56,6 +56,12 @@ nacin_hrbta = st.sidebar.selectbox(
 
 globina_utora = st.sidebar.slider("Globina utora / falca (mm)", min_value=4, max_value=10, value=6)
 
+# Odmik stropa/poda je možen SAMO takrat, ko so utori samo v stranicah!
+if "Samo stranice" in nacin_hrbta:
+    odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=15, value=5, key="oh_in")
+else:
+    odmik_hrbta = 0  # Ko so vsi v falcu, ni odmika
+
 zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm)", min_value=0, max_value=10, value=2, key="zp_in")
 odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="op_in")
 
@@ -86,6 +92,7 @@ if st.sidebar.button("💾 Shrani omaro v projekt"):
         "Debelina": debelina,
         "Nacin_Hrbta": nacin_hrbta,
         "Globina_Utora": globina_utora,
+        "Odmik_Hrbta": odmik_hrbta,
         "Zracnost_Polic": zracnost_polic_sirina,
         "Odmik_Police_G": odmik_police_globina,
         "ABS_Str_Spredaj": abs_str_spredaj,
@@ -156,6 +163,7 @@ if len(st.session_state.elements) > 0:
     zp_3d = el_3d["Zracnost_Polic"]
     nacin_h_3d = el_3d["Nacin_Hrbta"]
     g_utora_3d = el_3d["Globina_Utora"]
+    oh_3d = el_3d["Odmik_Hrbta"]
 
     fig = go.Figure()
 
@@ -165,9 +173,9 @@ if len(st.session_state.elements) > 0:
 
     # 2. Pod in strop
     if "Vsi elementi" in nacin_h_3d:
-        globina_stropa_poda = depth_3d  # seže v utor
+        globina_stropa_poda = depth_3d
     else:
-        globina_stropa_poda = depth_3d - g_utora_3d  # konča se pred utorom stranic
+        globina_stropa_poda = depth_3d - oh_3d
 
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
@@ -179,7 +187,7 @@ if len(st.session_state.elements) > 0:
         hrbelt_zmin = -g_utora_3d
         hrbelt_zmax = h_3d + g_utora_3d
     else:
-        hrbelt_zmin = 0  # čez celo višino med stranicama
+        hrbelt_zmin = 0
         hrbelt_zmax = h_3d
 
     dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, depth_3d - 5, depth_3d, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
@@ -191,7 +199,7 @@ if len(st.session_state.elements) > 0:
         sirina_kosa = w_3d - (2 * d_3d)
         sirina_police = sirina_kosa - zp_3d
         zacetek_y_police = 0
-        globina_police = depth_3d - g_utora_3d - opg_3d
+        globina_police = depth_3d - g_utora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
         x_zacetek = d_3d + (zp_3d / 2)
 
         for p_idx in range(st_polic_3d):
@@ -230,9 +238,11 @@ if len(st.session_state.elements) > 0:
             
             nacin_h = el.get("Nacin_Hrbta", "")
             g_utora = el.get("Globina_Utora", 6)
+            oh = el.get("Odmik_Hrbta", 0)
             zp = el.get("Zracnost_Polic", 2)
             opg = el.get("Odmik_Police_G", 25)
 
+            # Sestava izpisa ABS robov za stranico
             str_robovi = []
             if el.get("ABS_Str_Spredaj", True): str_robovi.append("Sprednji")
             if el.get("ABS_Str_Zgornji", False): str_robovi.append("Zgornji")
@@ -249,18 +259,18 @@ if len(st.session_state.elements) > 0:
             # 2. Strop in pod
             sirina_kosa = s - (2 * d)
             if "Vsi elementi" in nacin_h:
-                globina_stropa_poda = g + g_utora  # daljši, ker sedejo v utor zadaj
+                globina_stropa_poda = g + g_utora
             else:
-                globina_stropa_poda = g - g_utora  # krajši, ker se ustavijo pred utorom v stranicah
+                globina_stropa_poda = g - oh
 
             vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
             
-            # 3. Hrbtni del (Zračnost 2 mm pri višini, širina točno po utorih)
+            # 3. Hrbtni del
             zracnost_visina = 2
             if "Samo stranice" in nacin_h:
                 sirina_hrbta = s + (2 * g_utora)
                 visina_hrbta = v - zracnost_visina
-            else:  # Vsi elementi
+            else:
                 sirina_hrbta = s + (2 * g_utora)
                 visina_hrbta = v + (2 * g_utora) - zracnost_visina
                 
@@ -269,7 +279,7 @@ if len(st.session_state.elements) > 0:
             # 4. Police
             if st_polic > 0:
                 sirina_police = sirina_kosa - zp
-                globina_police = g - g_utora - opg
+                globina_police = g - g_utora - opg - oh
                 vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
             
             # 5. Vrata
@@ -279,7 +289,7 @@ if len(st.session_state.elements) > 0:
                 strop_kosov = 2 if s > 600 else 1
                 vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
 
-        st.success("Krojni list z obema vrstama utorov uspešno izračunan!")
+        st.success("Krojni list z izbranimi ABS robovi stranic in ostalih elementov uspešno izračunan!")
         df_skupaj = pd.DataFrame(vsi_kosi)
         st.dataframe(df_skupaj, use_container_width=True)
 else:
