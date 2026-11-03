@@ -39,7 +39,7 @@ with st.expander("🧊 Pokaži 3D predogled omare"):
 
 if st.button("🧮 Izračunaj krojni list", type="primary"):
     d, w, h, g = el["Debelina"], el["Širina"], el["Višina"], el["Globina"]
-     sirina_stropa_poda = w - (2 * d)
+    sirina_stropa_poda = w - (2 * d)
     kosi = [
         {"Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Višina (mm)": h},
         {"Del": "Strop / Pod", "Količina": 2, "Širina (mm)": g, "Višina (mm)": sirina_stropa_poda},
