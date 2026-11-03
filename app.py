@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("🪚 Mizarski Kalkulator: 3D Prikaz z Hrbtom in ABS")
-st.write("Izberi prostor, vnesi omaro, določi ABS robove ter preveri 3D barvni model in krojni list.")
+st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz z Debelino in Krojni List")
+st.write("Izberi prostor, vnesi omaro, določi ABS robove ter preveri 3D model s prikazom debelin elementov.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
 st.sidebar.header("📁 Vrsta projekta")
@@ -61,9 +61,13 @@ zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm
 odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="op_in")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Izbira ABS robov za elemente:**")
-abs_stranica = st.sidebar.checkbox("Stranici: ABS sprednji dolgi rob", value=True)
-abs_strop_pod = st.sidebar.checkbox("Strop / Pod: ABS prednji kratek rob", value=True)
+st.sidebar.markdown("**Izbira ABS robov za stranici:**")
+abs_str_spredaj = st.sidebar.checkbox("Stranica: Sprednji rob", value=True)
+abs_str_zgornji = st.sidebar.checkbox("Stranica: Zgornji rob", value=False)
+abs_str_spodnji = st.sidebar.checkbox("Stranica: Spodnji rob", value=False)
+
+st.sidebar.markdown("**Izbira ABS robov za ostale dele:**")
+abs_strop_pod = st.sidebar.checkbox("Strop / Pod: ABS prednji rob", value=True)
 abs_polica = st.sidebar.checkbox("Police: ABS prednji rob", value=True)
 abs_vrata = st.sidebar.checkbox("Vrata: ABS na vseh 4 straneh", value=True)
 
@@ -86,7 +90,9 @@ if st.sidebar.button("💾 Shrani omaro v projekt"):
         "Odmik_Hrbta": odmik_hrbta,
         "Zracnost_Polic": zracnost_polic_sirina,
         "Odmik_Police_G": odmik_police_globina,
-        "ABS_Stranica": abs_stranica,
+        "ABS_Str_Spredaj": abs_str_spredaj,
+        "ABS_Str_Zgornji": abs_str_zgornji,
+        "ABS_Str_Spodnji": abs_str_spodnji,
         "ABS_StropPod": abs_strop_pod,
         "ABS_Polica": abs_polica,
         "ABS_Vrata": abs_vrata
@@ -123,8 +129,23 @@ if len(st.session_state.elements) > 0:
 
     st.divider()
 
-    # --- 3D BARVNI PRIKAZ Z VSEMI DELI, HRBTOM IN ABS ---
-    st.subheader("🧊 3D predogled elementa")
+    # --- POMOŽNA FUNKCIJA ZA 3D MASIVNI KVADER (Z DEBELINO) ---
+    def dodaj_kvader(fig, x_min, x_max, y_min, y_max, z_min, z_max, color, name):
+        fig.add_trace(go.Mesh3d(
+            x=[x_min, x_max, x_max, x_min, x_min, x_max, x_max, x_min],
+            y=[y_min, y_min, y_max, y_max, y_min, y_min, y_max, y_max],
+            z=[z_min, z_min, z_min, z_min, z_max, z_max, z_max, z_max],
+            i=[0, 0, 4, 4, 0, 0, 2, 2, 0, 0, 1, 1],
+            j=[1, 2, 5, 6, 1, 5, 3, 7, 3, 7, 2, 6],
+            k=[2, 3, 6, 7, 5, 4, 7, 6, 7, 4, 6, 5],
+            color=color,
+            opacity=0.9,
+            name=name,
+            showscale=False
+        ))
+
+    # --- 3D MASIVNI PRIKAZ ---
+    st.subheader("🧊 3D predogled elementa (Z vsemi debelinami materialov)")
     izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"])
     
     el_3d = st.session_state.elements[izbran_indeks]
@@ -139,87 +160,34 @@ if len(st.session_state.elements) > 0:
 
     fig = go.Figure()
 
-    # 1. Leva stranica
-    fig.add_trace(go.Mesh3d(
-        x=[0, d_3d, d_3d, 0, 0, d_3d, d_3d, 0],
-        y=[0, 0, depth_3d, depth_3d, 0, 0, depth_3d, depth_3d],
-        z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
-        color='#A0522D', opacity=0.9, name='Leva stranica'
-    ))
-    if el_3d.get("ABS_Stranica", True):
-        fig.add_trace(go.Mesh3d(
-            x=[0, d_3d, d_3d, 0, 0, d_3d, d_3d, 0],
-            y=[0, 0, 0, 0, 0, 0, 0, 0],
-            z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
-            color='red', opacity=0.95, name='ABS rob (Leva stranica)'
-        ))
+    # 1. Leva stranica (masiven blok)
+    dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, '#A0522D', 'Leva stranica')
 
-    # 2. Desna stranica
-    fig.add_trace(go.Mesh3d(
-        x=[w_3d - d_3d, w_3d, w_3d, w_3d - d_3d, w_3d - d_3d, w_3d, w_3d, w_3d - d_3d],
-        y=[0, 0, depth_3d, depth_3d, 0, 0, depth_3d, depth_3d],
-        z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
-        color='#CD853F', opacity=0.9, name='Desna stranica'
-    ))
-    if el_3d.get("ABS_Stranica", True):
-        fig.add_trace(go.Mesh3d(
-            x=[w_3d - d_3d, w_3d, w_3d, w_3d - d_3d, w_3d - d_3d, w_3d, w_3d, w_3d - d_3d],
-            y=[0, 0, 0, 0, 0, 0, 0, 0],
-            z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
-            color='red', opacity=0.95, name='ABS rob (Desna stranica)'
-        ))
+    # 2. Desna stranica (masiven blok)
+    dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, '#CD853F', 'Desna stranica')
 
-    # 3. Pod
-    fig.add_trace(go.Mesh3d(
-        x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
-        y=[0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"], 0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"]],
-        z=[0, 0, 0, 0, d_3d, d_3d, d_3d, d_3d],
-        color='#DEB887', opacity=0.9, name='Pod'
-    ))
-    if el_3d.get("ABS_StropPod", True):
-        fig.add_trace(go.Mesh3d(
-            x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
-            y=[0, 0, 0, 0, 0, 0, 0, 0],
-            z=[0, 0, 0, 0, d_3d, d_3d, d_3d, d_3d],
-            color='red', opacity=0.95, name='ABS rob (Pod)'
-        ))
+    # 3. Pod (med stranicama)
+    globina_stropa_poda = depth_3d - el_3d["Odmik_Hrbta"]
+    dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
 
-    # 4. Strop
-    fig.add_trace(go.Mesh3d(
-        x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
-        y=[0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"], 0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"]],
-        z=[h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d, h_3d, h_3d, h_3d],
-        color='#F4A460', opacity=0.9, name='Strop'
-    ))
-    if el_3d.get("ABS_StropPod", True):
-        fig.add_trace(go.Mesh3d(
-            x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
-            y=[0, 0, 0, 0, 0, 0, 0, 0],
-            z=[h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d, h_3d, h_3d, h_3d],
-            color='red', opacity=0.95, name='ABS rob (Strop)'
-        ))
+    # 4. Strop (med stranicama)
+    dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
 
-    # 5. Hrbet
-    hrbet_z_zacetek = depth_3d - 5
+    # 5. Hrbet (HDF 5mm zadaj)
     if "utor" in nacin_h_3d:
-        hrbet_x_min = d_3d - el_3d["Globina_Utora"]
-        hrbet_x_max = w_3d - d_3d + el_3d["Globina_Utora"]
-        hrbet_z_min = -el_3d["Globina_Utora"]
-        hrbet_z_max = h_3d + el_3d["Globina_Utora"]
+        hrbelt_xmin = d_3d - el_3d["Globina_Utora"]
+        hrbelt_xmax = w_3d - d_3d + el_3d["Globina_Utora"]
+        hrbelt_zmin = -el_3d["Globina_Utora"]
+        hrbelt_zmax = h_3d + el_3d["Globina_Utora"]
     else:
-        hrbet_x_min = d_3d
-        hrbet_x_max = w_3d - d_3d
-        hrbet_z_min = d_3d
-        hrbet_z_max = h_3d - d_3d
+        hrbelt_xmin = d_3d
+        hrbelt_xmax = w_3d - d_3d
+        hrbelt_zmin = d_3d
+        hrbelt_zmax = h_3d - d_3d
 
-    fig.add_trace(go.Mesh3d(
-        x=[hrbet_x_min, hrbet_x_max, hrbet_x_max, hrbet_x_min, hrbet_x_min, hrbet_x_max, hrbet_x_max, hrbet_x_min],
-        y=[hrbet_z_zacetek, hrbet_z_zacetek, depth_3d, depth_3d, hrbet_z_zacetek, hrbet_z_zacetek, depth_3d, depth_3d],
-        z=[hrbet_z_min, hrbet_z_min, hrbet_z_min, hrbet_z_min, hrbet_z_max, hrbet_z_max, hrbet_z_max, hrbet_z_max],
-        color='#B0C4DE', opacity=0.85, name='Hrbet (HDF 5mm)'
-    ))
+    dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, depth_3d - 5, depth_3d, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
 
-    # 6. Police
+    # 6. Police (z debelino)
     if st_polic_3d > 0:
         notranja_visina = h_3d - (2 * d_3d)
         korak_visine = notranja_visina / (st_polic_3d + 1)
@@ -230,19 +198,7 @@ if len(st.session_state.elements) > 0:
 
         for p_idx in range(st_polic_3d):
             z_pos = d_3d + (p_idx + 1) * korak_visine
-            fig.add_trace(go.Mesh3d(
-                x=[x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek, x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek],
-                y=[0, 0, globina_police, globina_police, 0, 0, globina_police, globina_police],
-                z=[z_pos, z_pos, z_pos, z_pos, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d],
-                color='#20B2AA', opacity=0.9, name=f'Polica {p_idx+1}'
-            ))
-            if el_3d.get("ABS_Polica", True):
-                fig.add_trace(go.Mesh3d(
-                    x=[x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek, x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek],
-                    y=[0, 0, 0, 0, 0, 0, 0, 0],
-                    z=[z_pos, z_pos, z_pos, z_pos, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d],
-                    color='red', opacity=0.95, name=f'ABS rob (Polica {p_idx+1})'
-                ))
+            dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, 0, globina_police, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
 
     fig.update_layout(
         scene=dict(
@@ -252,7 +208,7 @@ if len(st.session_state.elements) > 0:
             aspectmode='data'
         ),
         margin=dict(l=0, r=0, b=0, t=0),
-        height=500
+        height=550
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -265,7 +221,7 @@ if len(st.session_state.elements) > 0:
         for el in st.session_state.elements:
             d = el.get("Debelina", 18)
             s = el.get("Širina", 800)
-            v = el.get("Višina", 720)
+            v = el.get("Visina", 720)
             g = el.get("Globina", 550)
             naziv = el.get("Naziv", "Element")
             st_polic = el.get("Police", 0)
@@ -277,7 +233,12 @@ if len(st.session_state.elements) > 0:
             zp = el.get("Zracnost_Polic", 2)
             opg = el.get("Odmik_Police_G", 25)
 
-            abs_s = "1x dolgi rob (spredaj)" if el.get("ABS_Stranica", True) else "Brez"
+            str_robovi = []
+            if el.get("ABS_Str_Spredaj", True): str_robovi.append("Sprednji")
+            if el.get("ABS_Str_Zgornji", False): str_robovi.append("Zgornji")
+            if el.get("ABS_Str_Spodnji", False): str_robovi.append("Spodnji")
+            abs_s = ", ".join(str_robovi) if str_robovi else "Brez"
+
             abs_sp = "1x prednji rob" if el.get("ABS_StropPod", True) else "Brez"
             abs_p = "1x sprednji rob" if el.get("ABS_Polica", True) else "Brez"
             abs_v = "Vse 4 strani" if el.get("ABS_Vrata", True) else "Brez"
@@ -298,23 +259,4 @@ if len(st.session_state.elements) > 0:
                 sirina_hrbta = s - (2 * d)
                 visina_hrbta = v - (2 * d)
                 
-            vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta, "Robni trak (ABS)": "Brez"})
-            
-            # 4. Police
-            if st_polic > 0:
-                sirina_police = sirina_kosa - zp
-                globina_police = g - opg
-                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
-            
-            # 5. Vrata
-            if ima_v:
-                visina_vrat = v - 4
-                sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
-                strop_kosov = 2 if s > 600 else 1
-                vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
-
-        st.success("Krojni list z izbranimi ABS robovi uspešno izračunan!")
-        df_skupaj = pd.DataFrame(vsi_kosi)
-        st.dataframe(df_skupaj, use_container_width=True)
-else:
-    st.info("V projektu še ni elementov. Izberite prostor in dodajte prvo omaro.")
+            vsi_kosi.append({"Omarica": naziv, "Del": "
