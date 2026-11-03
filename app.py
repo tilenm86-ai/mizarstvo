@@ -79,15 +79,22 @@ odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine om
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Izbira ABS robov (tapni za izbor):**")
 
-# Uporaba stikal / multiselecta namesto kljukic, ker na tablicah dela 100% zanesljivo
+# Stranice
 izbrani_robovi_stranice = st.sidebar.multiselect(
     "Stranica - ABS robovi", 
-    ["Sprednji", "Zgornji", "Spodnji"], 
+    ["Sprednji", "Zgornji", "Spodnji", "Zadnji"], 
     default=["Sprednji"],
     key="ms_stranica"
 )
 
-abs_strop_pod_izbira = st.sidebar.selectbox("Strop / Pod - Prednji ABS", ["Da (1x rob)", "Brez"], index=0, key="sb_strop_pod")
+# Strop / Pod (dodan multiselect za sprednji in zadnji rob)
+izbrani_robovi_strop_pod = st.sidebar.multiselect(
+    "Strop / Pod - ABS robovi", 
+    ["Sprednji", "Zadnji"], 
+    default=["Sprednji"],
+    key="ms_strop_pod"
+)
+
 abs_polica_izbira = st.sidebar.selectbox("Police - Prednji ABS", ["Da (1x rob)", "Brez"], index=0, key="sb_polica")
 abs_vrata_izbira = st.sidebar.selectbox("Vrata - ABS robovi", ["Vse 4 strani", "Brez"], index=0, key="sb_vrata")
 
@@ -113,7 +120,7 @@ if st.sidebar.button("💾 Shrani omaro v projekt", key="gumb_shrani"):
         "Zracnost_Polic": zracnost_polic_sirina,
         "Odmik_Police_G": odmik_police_globina,
         "Izbrani_Robovi_Stranice": izbrani_robovi_stranice,
-        "ABS_StropPod": abs_strop_pod_izbira,
+        "Izbrani_Robovi_StropPod": izbrani_robovi_strop_pod,
         "ABS_Polica": abs_polica_izbira,
         "ABS_Vrata": abs_vrata_izbira
     })
@@ -209,21 +216,22 @@ if len(st.session_state.elements) > 0:
         hrbelt_zmin = 0
         hrbelt_zmax = h_3d
 
-    dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
+    dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbbelt_zmin if 'hrbelt_zmin' in locals() else 0, hrbelt_zmax if 'hrbelt_zmax' in locals() else h_3d, '#B0C4DE', 'Hrbet (5mm)')
 
-    # 4. Police
+    # 4. Police (zadaj pri hrbtu)
     if st_polic_3d > 0:
         notranja_visina = h_3d - (2 * d_3d)
         korak_visine = notranja_visina / (st_polic_3d + 1)
         sirina_kosa = w_3d - (2 * d_3d)
         sirina_police = sirina_kosa - zp_3d
-        zacetek_y_police = 0
-        globina_police = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
+        
+        globina_police_3d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
+        zacetek_y_police = depth_3d - gutora_3d - opg_3d - globina_police_3d
         x_zacetek = d_3d + (zp_3d / 2)
 
         for p_idx in range(st_polic_3d):
             z_pos = d_3d + (p_idx + 1) * korak_visine
-            dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
+            dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police_3d, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
 
     fig.update_layout(
         scene=dict(
@@ -261,11 +269,14 @@ if len(st.session_state.elements) > 0:
             zp = el.get("Zracnost_Polic", 2)
             opg = el.get("Odmik_Police_G", 25)
 
-            # Sestava izpisa ABS robov za stranico iz shranjenega elementa
-            izbrani_r = el.get("Izbrani_Robovi_Stranice", [])
-            abs_s = ", ".join(izbrani_r) if izbrani_r else "Brez"
+            # ABS robovi za stranice
+            izbrani_r_str = el.get("Izbrani_Robovi_Stranice", [])
+            abs_s = ", ".join(izbrani_r_str) if izbrani_r_str else "Brez"
 
-            abs_sp = "1x prednji rob" if el.get("ABS_StropPod") == "Da (1x rob)" else "Brez"
+            # ABS robovi za strop / pod
+            izbrani_r_sp = el.get("Izbrani_Robovi_StropPod", [])
+            abs_sp = ", ".join(izbrani_r_sp) if izbrani_r_sp else "Brez"
+
             abs_p = "1x sprednji rob" if el.get("ABS_Polica") == "Da (1x rob)" else "Brez"
             abs_v = "Vse 4 strani" if el.get("ABS_Vrata") == "Vse 4 strani" else "Brez"
 
