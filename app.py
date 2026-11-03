@@ -48,4 +48,5 @@ if len(st.session_state.elements) > 0:
         ]
         if el["Police"] > 0:
             kosi.append({"Del": "Police", "Količina": el["Police"], "Širina": g - 38, "Višina": w - (2 * d) - 2})
-        st.dataframe(pd.DataFrame(kosi), use_container_width=True)
+        st.dataframe(pd.DataFrame(kosi), use_container_width=True
+        
