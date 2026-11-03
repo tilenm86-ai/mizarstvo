@@ -45,7 +45,7 @@ with col2:
 with col3:
     globina = st.number_input("Globina (mm)", value=550, step=10)
 
-# --- 3. KORAK: NASTAVITVE HRBTA IN ROBOV (ABS) ---
+# --- 3. KORAK: NASTAVITve HRBTA IN ROBOV (ABS) ---
 st.sidebar.subheader("⚙️ Konstrukcija hrbta in ABS robovi")
 nacin_hrbta = st.sidebar.selectbox(
     "Vgradnja hrbta", 
@@ -169,16 +169,16 @@ if len(st.session_state.elements) > 0:
     dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, '#A0522D', 'Leva stranica')
     dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, '#CD853F', 'Desna stranica')
 
-    # 2. Pod in strop (če je utor v vseh elementih, sežeta globlje za globino utora)
+    # 2. Pod in strop
     if "Vsi elementi" in nacin_h_3d:
-        globina_stropa_poda = depth_3d  # seže do konca utora
+        globina_stropa_poda = depth_3d
     else:
         globina_stropa_poda = depth_3d - el_3d["Odmik_Hrbta"]
 
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
 
-    # 3. Hrbet
+    # 3. Hrbet 3D risanje
     if "V utoru" in nacin_h_3d:
         hrbelt_xmin = d_3d - g_utora_3d
         hrbelt_xmax = w_3d - d_3d + g_utora_3d
@@ -256,27 +256,28 @@ if len(st.session_state.elements) > 0:
             # 1. Stranici
             vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v, "Robni trak (ABS)": abs_s})
             
-            # 2. Strop in pod (Če je utor v vseh elementih, je globina večja za globino utora)
+            # 2. Strop in pod
             sirina_kosa = s - (2 * d)
             if "Vsi elementi" in nacin_h:
-                globina_stropa_poda = g + g_utora  # daljši za razrez v utor
-            elif "Samo stranice" in nacin_h or "Prislonjen" in nacin_h:
+                globina_stropa_poda = g + g_utora
+            elif "Samo stranice" in nacin_h:
                 globina_stropa_poda = g - oh
             else:
                 globina_stropa_poda = g
 
             vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
             
-            # 3. Hrbtni del
-            if "Vsi elementi" in nacin_h:
-                sirina_hrbta = s - (2 * d) + (2 * g_utora)
-                visina_hrbta = v + (2 * g_utora)
-            elif "Samo stranice" in nacin_h:
-                sirina_hrbta = s - (2 * d) + (2 * g_utora)
-                visina_hrbta = v - (2 * d)
+            # 3. Hrbtni del (Zračnost 2 mm samo pri višini, širina točno na mero)
+            zracnost_visina = 2
+            if "V utoru: Samo stranice" in nacin_h:
+                sirina_hrbta = s + (2 * g_utora)
+                visina_hrbta = v - zracnost_visina
+            elif "V utoru: Vsi elementi" in nacin_h:
+                sirina_hrbta = s + (2 * g_utora)
+                visina_hrbta = v + (2 * g_utora) - zracnost_visina
             else:
                 sirina_hrbta = s - (2 * d)
-                visina_hrbta = v - (2 * d)
+                visina_hrbta = v - (2 * d) - zracnost_visina
                 
             vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta, "Robni trak (ABS)": "Brez"})
             
@@ -293,7 +294,7 @@ if len(st.session_state.elements) > 0:
                 strop_kosov = 2 if s > 600 else 1
                 vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
 
-        st.success("Krojni list z izbranimi ABS robovi stranic uspešno izračunan!")
+        st.success("Krojni list z natančno širino hrbta in zračnostjo v višini uspešno izračunan!")
         df_skupaj = pd.DataFrame(vsi_kosi)
         st.dataframe(df_skupaj, use_container_width=True)
 else:
