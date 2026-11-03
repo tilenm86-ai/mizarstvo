@@ -246,7 +246,7 @@ if len(st.session_state.elements) > 0:
     st.plotly_chart(fig, use_container_width=True)
     st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
 
-    # --- 2D TEHNIČNI PREREZI (Z ČRTKANIMI ČRTAMI ZA STROP, POD IN POLICE) ---
+    # --- 2D TEHNIČNI PREREZI ---
     with st.expander("📐 Pokaži 2D tehnične poglede (Spredaj, Stranski prerez, Od zgoraj s črtkanimi črtami)"):
         tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
         
@@ -254,15 +254,11 @@ if len(st.session_state.elements) > 0:
         with tab_spredaj:
             st.write("Skica omare gledano od spredaj (z zarisom notranjih elementov in polic s črtkano črto).")
             fig_front = go.Figure()
-            # Stranici
             fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
             fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            
-            # Pod in strop (s črtkastim robom / poudarkom)
             fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#DEB887", opacity=0.8)
             fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.8)
             
-            # Police s črtkano obrobo
             if st_polic_3d > 0:
                 notranja_visina = h_3d - (2 * d_3d)
                 korak_visine = notranja_visina / (st_polic_3d + 1)
@@ -279,11 +275,18 @@ if len(st.session_state.elements) > 0:
             )
             st.plotly_chart(fig_front, use_container_width=True)
 
-        # 2. STRANI
+        # 2. STRANI (DODANI ČRTKANI STROP IN POD)
         with tab_stran:
-            st.write("Stranski prerez omare (s črtkanimi črtami za utor in police).")
+            st.write("Stranski prerez omare (s črtkanimi črtami za strop, pod, utor in police).")
             fig_side = go.Figure()
-            fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.6)
+            # Stranica (prikazzeta kot ozadje)
+            fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.4)
+            
+            # Pod od strani (s črtkastim robom)
+            fig_side.add_shape(type="rect", x0=0, y0=0, x1=globina_stropa_poda, y1=d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#DEB887", opacity=0.8)
+            
+            # Strop od strani (s črtkastim robom)
+            fig_side.add_shape(type="rect", x0=0, y0=h_3d-d_3d, x1=globina_stropa_poda, y1=h_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.8)
             
             ut_y_zacetek = depth_3d - ouz_3d
             if "Vsi elementi" in nacin_h_3d:
@@ -321,11 +324,7 @@ if len(st.session_state.elements) > 0:
             fig_top = go.Figure()
             fig_top.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
             fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
-            
-            # Strop s črtkanim robom
             fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.7)
-            
-            # Hrbet s črtkano modro črto
             fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line=dict(color="blue", width=1.5, dash="dash"), fillcolor="#B0C4DE", opacity=0.8)
 
             fig_top.update_layout(
