@@ -172,87 +172,87 @@ if len(st.session_state.elements) > 0:
             showscale=False
         ))
 
-    # --- 3D MASIVNI PRIKAZ ---
-    st.subheader("🧊 3D predogled elementa (Z možnostjo približevanja in vrtenja)")
-    izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="select_3d_index")
-    
-    el_3d = st.session_state.elements[izbran_indeks]
-    d_3d = el_3d["Debelina"]
-    w_3d = el_3d["Širina"]
-    h_3d = el_3d["Višina"]
-    depth_3d = el_3d["Globina"]
-    st_polic_3d = el_3d["Police"]
-    opg_3d = el_3d["Odmik_Police_G"]
-    zp_3d = el_3d["Zracnost_Polic"]
-    nacin_h_3d = el_3d["Nacin_Hrbta"]
-    ouz_3d = el_3d.get("Odmik_Utora_Zadaj", 10)
-    gutora_3d = el_3d["Globina_Utora"]
-    oh_3d = el_3d["Odmik_Hrbta"]
-
-    fig = go.Figure()
-
-    dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, '#A0522D', 'Leva stranica')
-    dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, '#CD853F', 'Desna stranica')
-
-    if "Vsi elementi" in nacin_h_3d:
-        globina_stropa_poda = depth_3d
-    else:
-        globina_stropa_poda = depth_3d - oh_3d
-
-    dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
-    dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
-
-    hrbelt_xmin = d_3d - gutora_3d
-    hrbelt_xmax = w_3d - d_3d + gutora_3d
-    hrbelt_y_zacetek = depth_3d - ouz_3d
-    hrbelt_y_konec = depth_3d - ouz_3d + 5  
-    
-    if "Vsi elementi" in nacin_h_3d:
-        hrbelt_zmin = d_3d - gutora_3d
-        hrbelt_zmax = h_3d - d_3d + gutora_3d
-    else:
-        hrbelt_zmin = 0
-        hrbelt_zmax = h_3d
-
-    dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
-
-    if st_polic_3d > 0:
-        notranja_visina = h_3d - (2 * d_3d)
-        korak_visine = notranja_visina / (st_polic_3d + 1)
-        sirina_kosa = w_3d - (2 * d_3d)
-        sirina_police = sirina_kosa - zp_3d
+    # --- 3D PREDOGLED V PREDALČKU ---
+    with st.expander("🧊 Pokaži 3D predogled omare (Z možnostjo približevanja in vrtenja)"):
+        izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="select_3d_index")
         
-        globina_police_3d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
-        zacetek_y_police = depth_3d - gutora_3d - opg_3d - globina_police_3d
-        x_zacetek = d_3d + (zp_3d / 2)
+        el_3d = st.session_state.elements[izbran_indeks]
+        d_3d = el_3d["Debelina"]
+        w_3d = el_3d["Širina"]
+        h_3d = el_3d["Višina"]
+        depth_3d = el_3d["Globina"]
+        st_polic_3d = el_3d["Police"]
+        opg_3d = el_3d["Odmik_Police_G"]
+        zp_3d = el_3d["Zracnost_Polic"]
+        nacin_h_3d = el_3d["Nacin_Hrbta"]
+        ouz_3d = el_3d.get("Odmik_Utora_Zadaj", 10)
+        gutora_3d = el_3d["Globina_Utora"]
+        oh_3d = el_3d["Odmik_Hrbta"]
 
-        for p_idx in range(st_polic_3d):
-            z_pos = d_3d + (p_idx + 1) * korak_visine
-            dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police_3d, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
+        fig = go.Figure()
 
-    fig.update_layout(
-        scene=dict(
-            xaxis_title='Širina (mm)',
-            yaxis_title='Globina (mm)',
-            zaxis_title='Višina (mm)',
-            aspectmode='data',
-            camera=dict(eye=dict(x=1.5, y=1.8, z=1.2))
-        ),
-        margin=dict(l=0, r=0, b=0, t=0),
-        height=550,
-        dragmode='orbit'
-    )
+        dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, '#A0522D', 'Leva stranica')
+        dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, '#CD853F', 'Desna stranica')
 
-    st.plotly_chart(fig, use_container_width=True)
-    st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
+        if "Vsi elementi" in nacin_h_3d:
+            globina_stropa_poda = depth_3d
+        else:
+            globina_stropa_poda = depth_3d - oh_3d
 
-    # --- 2D TEHNIČNI PREREZI ---
-    with st.expander("📐 Pokaži 2D tehnične poglede (Spredaj, Stranski prerez, Od zgoraj s črtkanimi črtami)"):
-        tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
+        dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
+        dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
+
+        hrbelt_xmin = d_3d - gutora_3d
+        hrbelt_xmax = w_3d - d_3d + gutora_3d
+        hrbelt_y_zacetek = depth_3d - ouz_3d
+        hrbelt_y_konec = depth_3d - ouz_3d + 5  
         
-        # 1. SPREDAJ
+        if "Vsi elementi" in nacin_h_3d:
+            hrbelt_zmin = d_3d - gutora_3d
+            hrbelt_zmax = h_3d - d_3d + gutora_3d
+        else:
+            hrbelt_zmin = 0
+            hrbelt_zmax = h_3d
+
+        dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
+
+        if st_polic_3d > 0:
+            notranja_visina = h_3d - (2 * d_3d)
+            korak_visine = notranja_visina / (st_polic_3d + 1)
+            sirina_kosa = w_3d - (2 * d_3d)
+            sirina_police = sirina_kosa - zp_3d
+            
+            globina_police_3d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
+            zacetek_y_police = depth_3d - gutora_3d - opg_3d - globina_police_3d
+            x_zacetek = d_3d + (zp_3d / 2)
+
+            for p_idx in range(st_polic_3d):
+                z_pos = d_3d + (p_idx + 1) * korak_visine
+                dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police_3d, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
+
+        fig.update_layout(
+            scene=dict(
+                xaxis_title='Širina (mm)',
+                yaxis_title='Globina (mm)',
+                zaxis_title='Višina (mm)',
+                aspectmode='data',
+                camera=dict(eye=dict(x=1.5, y=1.8, z=1.2))
+            ),
+            margin=dict(l=0, r=0, b=0, t=0),
+            height=550,
+            dragmode='orbit'
+        )
+
+        st.plotly_chart(fig, use_container_width=True)
+        st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
+
+    # --- 2D TEHNIČNI PREREZI Z KOTIRANIMI MERAMI ---
+    with st.expander("📐 Pokaži 2D tehnične poglede s kotiranimi merami (Spredaj, Stranski prerez, Od zgoraj)"):
+        tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj (Kote)", "Pogled od strani (Kote)", "Pogled od zgoraj / Tloris (Kote)"])
+        
+        # 1. SPREDAJ Z KOTAMI
         with tab_spredaj:
-            st.write("Skica omare gledano od spredaj (z zarisom notranjih elementov in polic s črtkano črto).")
+            st.write("Skica omare gledano od spredaj z označenimi gabariti in merami.")
             fig_front = go.Figure()
             fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
             fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
@@ -269,23 +269,24 @@ if len(st.session_state.elements) > 0:
                     z_pos = d_3d + (p_idx + 1) * korak_visine
                     fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#20B2AA", opacity=0.8)
 
+            # Dodajanje besedilnih kot (oznak dimenzij)
+            fig_front.add_annotation(x=w_3d/2, y=h_3d + 25, text=f"Širina: {w_3d} mm", showarrow=False, font=dict(size=14, color="black"))
+            fig_front.add_annotation(x=-35, y=h_3d/2, text=f"Višina: {h_3d} mm", showarrow=False, textangle=-90, font=dict(size=14, color="black"))
+            fig_front.add_annotation(x=w_3d/2, y=h_3d/2, text=f"Debelina: {d_3d} mm", showarrow=False, font=dict(size=11, color="gray"))
+
             fig_front.update_layout(
-                xaxis_title="Širina (mm)", yaxis_title="Višina (mm)", height=400,
-                xaxis=dict(range=[-50, w_3d + 50]), yaxis=dict(range=[-50, h_3d + 50], scaleanchor="x", scaleratio=1), showlegend=False
+                xaxis_title="Širina (mm)", yaxis_title="Višina (mm)", height=420,
+                xaxis=dict(range=[-60, w_3d + 60]), yaxis=dict(range=[-40, h_3d + 55], scaleanchor="x", scaleratio=1), showlegend=False
             )
             st.plotly_chart(fig_front, use_container_width=True)
 
-        # 2. STRANI (DODANI ČRTKANI STROP IN POD)
+        # 2. STRANI Z KOTAMI
         with tab_stran:
-            st.write("Stranski prerez omare (s črtkanimi črtami za strop, pod, utor in police).")
+            st.write("Stranski prerez omare z označenimi globinskimi merami in odmiki.")
             fig_side = go.Figure()
-            # Stranica (prikazzeta kot ozadje)
             fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.4)
             
-            # Pod od strani (s črtkastim robom)
             fig_side.add_shape(type="rect", x0=0, y0=0, x1=globina_stropa_poda, y1=d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#DEB887", opacity=0.8)
-            
-            # Strop od strani (s črtkastim robom)
             fig_side.add_shape(type="rect", x0=0, y0=h_3d-d_3d, x1=globina_stropa_poda, y1=h_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.8)
             
             ut_y_zacetek = depth_3d - ouz_3d
@@ -296,40 +297,47 @@ if len(st.session_state.elements) > 0:
                 ut_z_min = 0
                 ut_z_max = h_3d
 
-            # Utor s črtkano modro črto
             fig_side.add_shape(type="rect", x0=ut_y_zacetek, y0=ut_z_min,
                              x1=ut_y_zacetek + debelina_utora, y1=ut_z_max,
                              line=dict(color="blue", width=1.5, dash="dash"), fillcolor="#B0C4DE", opacity=0.8)
 
-            # Police s črtkano obrobo od strani
             if st_polic_3d > 0:
                 notranja_visina = h_3d - (2 * d_3d)
                 korak_visine = notranja_visina / (st_polic_3d + 1)
                 globina_police_2d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
-                zacetek_y_pol_2d = depth_3d - gutora_3d - opg_3d - globina_police_2d
+                zacetek_y_pol_2d = ut_y_zacetek - opg_3d - globina_police_2d
 
                 for p_idx in range(st_polic_3d):
                     z_pos = d_3d + (p_idx + 1) * korak_visine
                     fig_side.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos, x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#20B2AA", opacity=0.8)
 
+            # Dodajanje kotiranih mer za stran
+            fig_side.add_annotation(x=depth_3d/2, y=h_3d + 25, text=f"Globina: {depth_3d} mm", showarrow=False, font=dict(size=14, color="black"))
+            fig_side.add_annotation(x=-35, y=h_3d/2, text=f"Višina: {h_3d} mm", showarrow=False, textangle=-90, font=dict(size=14, color="black"))
+            fig_side.add_annotation(x=ut_y_zacetek, y=h_3d/2, text=f"Utor od zadaj: {ouz_3d} mm", showarrow=False, textangle=-90, font=dict(size=10, color="blue"))
+
             fig_side.update_layout(
-                xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=400,
-                xaxis=dict(range=[-50, depth_3d + 50]), yaxis=dict(range=[-50, h_3d + 50], scaleanchor="x", scaleratio=1), showlegend=False
+                xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=420,
+                xaxis=dict(range=[-60, depth_3d + 60]), yaxis=dict(range=[-40, h_3d + 55], scaleanchor="x", scaleratio=1), showlegend=False
             )
             st.plotly_chart(fig_side, use_container_width=True)
 
-        # 3. OD ZGORAJ (TLORIS)
+        # 3. OD ZGORAJ / TLORIS Z KOTAMI
         with tab_zgoraj:
-            st.write("Tloris omare gledano od zgoraj (s črtkastimi linijami za hrbet in strop).")
+            st.write("Tloris omare gledano od zgoraj z označenimi širinskimi in globinskimi merami.")
             fig_top = go.Figure()
             fig_top.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
             fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
             fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line=dict(color="black", width=1.5, dash="dash"), fillcolor="#F4A460", opacity=0.7)
             fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line=dict(color="blue", width=1.5, dash="dash"), fillcolor="#B0C4DE", opacity=0.8)
 
+            # Dodajanje kotiranih mer za tloris
+            fig_top.add_annotation(x=w_3d/2, y=depth_3d + 30, text=f"Širina: {w_3d} mm", showarrow=False, font=dict(size=14, color="black"))
+            fig_top.add_annotation(x=-35, y=depth_3d/2, text=f"Globina: {depth_3d} mm", showarrow=False, textangle=-90, font=dict(size=14, color="black"))
+
             fig_top.update_layout(
-                xaxis_title="Širina (mm)", yaxis_title="Globina (mm)", height=400,
-                xaxis=dict(range=[-50, w_3d + 50]), yaxis=dict(range=[-50, depth_3d + 50], scaleanchor="x", scaleratio=1), showlegend=False
+                xaxis_title="Širina (mm)", yaxis_title="Globina (mm)", height=420,
+                xaxis=dict(range=[-60, w_3d + 60]), yaxis=dict(range=[-40, depth_3d + 55], scaleanchor="x", scaleratio=1), showlegend=False
             )
             st.plotly_chart(fig_top, use_container_width=True)
 
