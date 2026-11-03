@@ -4,8 +4,8 @@ import plotly.graph_objects as go
 
 st.set_page_config(layout="wide")
 
-st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
-st.write("Izberi prostor, vnesi omaro, določi nastavitve utora in ABS robove ter preveri 3D model.")
+st.title("🪚 Mizarski Kalkulator: 3D, Krojni List in 2D Preresi")
+st.write("Izberi prostor, vnesi omaro, določi nastavitve utora in ABS robove ter preveri izrise.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
 vrsta_projekta = st.sidebar.selectbox(
@@ -154,7 +154,7 @@ if len(st.session_state.elements) > 0:
 
     st.divider()
 
-    # --- POMOŽNA FUNKCIJA ZA 3D MASIVNI KVADER ---
+    # --- POMOŽNA FUNKCIJA ZA 3D KVADER ---
     def dodaj_kvader(fig, x_min, x_max, y_min, y_max, z_min, z_max, color, name):
         fig.add_trace(go.Mesh3d(
             x=[x_min, x_max, x_max, x_min, x_min, x_max, x_max, x_min],
@@ -188,11 +188,9 @@ if len(st.session_state.elements) > 0:
 
     fig = go.Figure()
 
-    # 1. Leva in desna stranica
     dodaj_kvader(fig, 0, d_3d, 0, depth_3d, 0, h_3d, '#A0522D', 'Leva stranica')
     dodaj_kvader(fig, w_3d - d_3d, w_3d, 0, depth_3d, 0, h_3d, '#CD853F', 'Desna stranica')
 
-    # 2. Pod in strop
     if "Vsi elementi" in nacin_h_3d:
         globina_stropa_poda = depth_3d
     else:
@@ -201,7 +199,6 @@ if len(st.session_state.elements) > 0:
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
 
-    # 3. Hrbet 3D risanje
     hrbelt_xmin = d_3d - gutora_3d
     hrbelt_xmax = w_3d - d_3d + gutora_3d
     hrbelt_y_zacetek = depth_3d - ouz_3d
@@ -216,7 +213,6 @@ if len(st.session_state.elements) > 0:
 
     dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, hrbelt_y_zacetek, hrbelt_y_konec, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
 
-    # 4. Police (zadaj pri hrbtu)
     if st_polic_3d > 0:
         notranja_visina = h_3d - (2 * d_3d)
         korak_visine = notranja_visina / (st_polic_3d + 1)
@@ -247,6 +243,46 @@ if len(st.session_state.elements) > 0:
     st.plotly_chart(fig, use_container_width=True)
     st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
 
+    # --- 2D TEHNIČNI PREREZ (DODATNI PREDALČEK / EXPANDER) ---
+    with st.expander("📐 Pokaži 2D tehnični prerez (Stranski pogled z utorom in policami)"):
+        st.write("Tehnični prerez omare s stranskega pogleda (prikazuje debelino materialov, utor za hrbet in pozicijo polic).")
+        
+        fig_2d = go.Figure()
+        
+        # Risanje stranskega prereza (2D v Y-Z ravnini)
+        # 1. Stranica (kot pravokotnik v 2D: y od 0 do depth, z od 0 do height)
+        fig_2d.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d,
+                         line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.6)
+        
+        # 2. Utor za hrbet
+        ut_y_zacetek = depth_3d - ouz_3d
+        fig_2d.add_shape(type="rect", x0=ut_y_zacetek, y0=-gutora_3d if "Vsi elementi" in nacin_h_3d else 0,
+                         x1=ut_y_zacetek + debelina_utora, y1=h_3d + (gutora_3d if "Vsi elementi" in nacin_h_3d else 0),
+                         line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
+
+        # 3. Police v 2D stranskem pogledu
+        if st_polic_3d > 0:
+            notranja_visina = h_3d - (2 * d_3d)
+            korak_visine = notranja_visina / (st_polic_3d + 1)
+            globina_police_2d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
+            zacetek_y_pol_2d = depth_3d - gutora_3d - opg_3d - globina_police_2d
+
+            for p_idx in range(st_polic_3d):
+                z_pos = d_3d + (p_idx + 1) * korak_visine
+                fig_2d.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos,
+                                 x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d,
+                                 line=dict(color="black", width=1), fillcolor="#20B2AA", opacity=0.9)
+
+        fig_2d.update_layout(
+            xaxis_title="Globina (mm)",
+            yaxis_title="Višina (mm)",
+            height=450,
+            xaxis=dict(range=[-20, depth_3d + 20], constrain="domain"),
+            yaxis=dict(range=[-20, h_3d + 20], scaleanchor="x", scaleratio=1),
+            showlegend=False
+        )
+        st.plotly_chart(fig_2d, use_container_width=True)
+
     st.divider()
 
     # --- 4. IZRAČUN ---
@@ -267,11 +303,9 @@ if len(st.session_state.elements) > 0:
             zp = el.get("Zracnost_Polic", 2)
             opg = el.get("Odmik_Police_G", 25)
 
-            # ABS robovi za stranice
             izbrani_r_str = el.get("Izbrani_Robovi_Stranice", [])
             abs_s = ", ".join(izbrani_r_str) if izbrani_r_str else "Brez"
 
-            # ABS robovi za strop / pod
             izbrani_r_sp = el.get("Izbrani_Robovi_StropPod", [])
             abs_sp = ", ".join(izbrani_r_sp) if izbrani_r_sp else "Brez"
 
