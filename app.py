@@ -86,4 +86,124 @@ with col3:
 
 # --- 3. KORAK: NASTAVITVE HRBTA, UTORA IN ROBOV (ABS) V STRANSKEM MENIJU ---
 st.sidebar.subheader("⚙️ Konstrukcija hrbta, utora in ABS")
-nacin_hrbta = st.
+nacin_hrbta = st.sidebar.selectbox(
+    "Vgradnja hrbta", 
+    [
+        "V utoru: Samo stranice (strop in pod brez utora)",
+        "V utoru: Vsi elementi (stranice, strop, pod)"
+    ],
+    key="input_nacin_hrbta"
+)
+
+privzeti_odmik = 20 if "Viseča" in tip_elementa or "vitrina" in tip_elementa else 10
+
+odmik_utora_zadaj = st.sidebar.slider("Odmik utora od zadnjega roba (mm)", min_value=5, max_value=35, value=privzeti_odmik, key="input_odmik_utora")
+debelina_utora = st.sidebar.slider("Debelina utora (širina reza v mm)", min_value=4, max_value=8, value=6, key="input_deb_utora")
+globina_utora = st.sidebar.slider("Globina utora (v globino materiala v mm)", min_value=4, max_value=15, value=13, key="input_globina_utora")
+
+zracnost_visina_hrbta = st.sidebar.slider("Zračnost za višino hrbta (mm)", min_value=0, max_value=10, value=2, key="input_zracnost_v_hrbta")
+
+preostanek_mesa = debelina - globina_utora
+if preostanek_mesa < 4:
+    st.sidebar.warning(f"⚠️ Pozor! Zadaj za privijačenje ostane samo {preostanek_mesa} mm materiala.")
+else:
+    st.sidebar.info(f"ℹ️ Zadaj za privijačenje ostane {preostanek_mesa} mm materiala.")
+
+if "Samo stranice" in nacin_hrbta:
+    odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=30, value=5, key="input_odmik_hrbta")
+else:
+    odmik_hrbta = 0
+
+zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm)", min_value=0, max_value=10, value=2, key="input_zracnost")
+odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="input_odmik_pol")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Izbira ABS robov (tapni za izbor):**")
+
+izbrani_robovi_stranice = st.sidebar.multiselect(
+    "Stranica - ABS robovi", 
+    ["Sprednji", "Zgornji", "Spodnji", "Zadnji"], 
+    default=["Sprednji"],
+    key="ms_stranica"
+)
+
+izbrani_robovi_strop_pod = st.sidebar.multiselect(
+    "Strop / Pod - ABS robovi", 
+    ["Sprednji", "Zadnji"], 
+    default=["Sprednji"],
+    key="ms_strop_pod"
+)
+
+abs_polica_izbira = st.sidebar.selectbox("Police - Prednji ABS", ["Da (1x rob)", "Brez"], index=0, key="sb_polica")
+abs_vrata_izbira = st.sidebar.selectbox("Vrata - ABS robovi", ["Vse 4 strani", "Brez"], index=0, key="sb_vrata")
+
+if st.sidebar.button("💾 Shrani omaro v projekt", key="gumb_shrani"):
+    st.session_state.elements = [{
+        "Projekt": vrsta_projekta,
+        "Naziv": ime_elementa,
+        "Tip": tip_elementa,
+        "Širina": sirina,
+        "Višina": visina,
+        "Globina": globina,
+        "Police": stevilo_polic,
+        "Vrata": ima_vrata,
+        "Debelina": debelina,
+        "Nacin_Hrbta": nacin_hrbta,
+        "Odmik_Utora_Zadaj": odmik_utora_zadaj,
+        "Debelina_Utora": debelina_utora,
+        "Globina_Utora": globina_utora,
+        "Zracnost_Visina_Hrbta": zracnost_visina_hrbta,
+        "Odmik_Hrbta": odmik_hrbta,
+        "Zracnost_Polic": zracnost_polic_sirina,
+        "Odmik_Police_G": odmik_police_globina,
+        "Izbrani_Robovi_Stranice": izbrani_robovi_stranice,
+        "Izbrani_Robovi_StropPod": izbrani_robovi_strop_pod,
+        "ABS_Polica": abs_polica_izbira,
+        "ABS_Vrata": abs_vrata_izbira
+    }]
+    st.sidebar.success(f"Posodobljeno: {ime_elementa}")
+
+# --- GLAVNI ZASLON ---
+st.subheader(f"📋 Seznam elementov za projekt: {vrsta_projekta}")
+
+if len(st.session_state.elements) > 0:
+    for i, el in enumerate(st.session_state.elements):
+        c1, c2 = st.columns([5, 1])
+        with c1:
+            naziv_p = el.get('Naziv', 'Element')
+            projekt_p = el.get('Projekt', 'Kuhinja')
+            tip_p = el.get('Tip', 'Omarica')
+            s_p = el.get('Širina', 0)
+            v_p = el.get('Višina', 0)
+            g_p = el.get('Globina', 0)
+            pol_p = el.get('Police', 0)
+            
+            st.write(f"**{i+1}. {naziv_p}** ({projekt_p} ➔ *{tip_p}*) — Š: {s_p} mm, V: {v_p} mm, G: {g_p} mm | Police: {pol_p}")
+        with c2:
+            if st.button("❌", key=f"del_{i}"):
+                st.session_state.elements = []
+                st.rerun()
+
+    if st.button("🗑️ Počisti cel projekt", key="gumb_pocisti"):
+        st.session_state.elements = []
+        st.rerun()
+
+    st.divider()
+
+    # --- POMOŽNA FUNKCIJA ZA 3D KVADER ---
+    def dodaj_kvader(fig, x_min, x_max, y_min, y_max, z_min, z_max, color, name):
+        fig.add_trace(go.Mesh3d(
+            x=[x_min, x_max, x_max, x_min, x_min, x_max, x_max, x_min],
+            y=[y_min, y_min, y_max, y_max, y_min, y_min, y_max, y_max],
+            z=[z_min, z_min, z_min, z_min, z_max, z_max, z_max, z_max],
+            i=[0, 0, 4, 4, 0, 0, 2, 2, 0, 0, 1, 1],
+            j=[1, 2, 5, 6, 1, 5, 3, 7, 3, 7, 2, 6],
+            k=[2, 3, 6, 7, 5, 4, 7, 6, 7, 4, 6, 5],
+            color=color,
+            opacity=0.9,
+            name=name,
+            showscale=False
+        ))
+
+    # --- POMOŽNE FUNKCIJE ZA RDEČE TEHNIČNE KOTE ---
+    def narisi_koto_horizontalno(fig,
