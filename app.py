@@ -31,8 +31,8 @@ if "elements" not in st.session_state:
         "Vrata": True,
         "Debelina": 18,
         "Nacin_Hrbta": "V utoru: Vsi elementi (stranice, strop, pod)",
-        "Odmik_Utora_Zadaj": 10,
-        "Debelina_Utora": 6,
+        "Odmik_Utora_Zadaj": 5,
+        "Debelina_Utora": 5,
         "Globina_Utora": 13,
         "Zracnost_Visina_Hrbta": 2,
         "Odmik_Hrbta": 0,
@@ -90,10 +90,10 @@ nacin_hrbta = st.sidebar.selectbox(
     key="input_nacin_hrbta"
 )
 
-privzeti_odmik = 20 if "Viseča" in tip_elementa or "vitrina" in tip_elementa else 10
+privzeti_odmik = 5
 
 odmik_utora_zadaj = st.sidebar.slider("Odmik utora od zadnjega roba (mm)", min_value=5, max_value=35, value=privzeti_odmik, key="input_odmik_utora")
-debelina_utora = st.sidebar.slider("Debelina utora (širina reza v mm)", min_value=4, max_value=8, value=6, key="input_deb_utora")
+debelina_utora = st.sidebar.slider("Debelina utora (širina reza v mm)", min_value=4, max_value=8, value=5, key="input_deb_utora")
 globina_utora = st.sidebar.slider("Globina utora (v globino materiala v mm)", min_value=4, max_value=15, value=13, key="input_globina_utora")
 
 zracnost_visina_hrbta = st.sidebar.slider("Zračnost za višino hrbta (mm)", min_value=0, max_value=10, value=2, key="input_zracnost_v_hrbta")
@@ -198,10 +198,8 @@ if len(st.session_state.elements) > 0:
             showscale=False
         ))
 
-    # --- POPRAVLJENE FUNKCIJE ZA KOTE Z ŠIRŠO PREKINITVIJO ČRTE ---
     def narisi_koto_horizontalno(fig, x_start, x_end, y_pos, tekst):
         sredina = (x_start + x_end) / 2
-        # Pustimo večji prazen prostor v sredini (od -45 do +45), da gre pisava nesmetano vmes
         fig.add_trace(go.Scatter(x=[x_start, sredina - 45], y=[y_pos, y_pos], mode="lines", line_color="red", line_width=1.5, showlegend=False))
         fig.add_trace(go.Scatter(x=[sredina + 45, x_end], y=[y_pos, y_pos], mode="lines", line_color="red", line_width=1.5, showlegend=False))
         fig.add_trace(go.Scatter(
@@ -217,7 +215,6 @@ if len(st.session_state.elements) > 0:
 
     def narisi_koto_vertikalno(fig, y_start, y_end, x_pos, tekst):
         sredina = (y_start + y_end) / 2
-        # Širša prekinitev navpične črte, da besedilo nikoli ni prečrtano
         fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[y_start, sredina - 35], mode="lines", line_color="red", line_width=1.5, showlegend=False))
         fig.add_trace(go.Scatter(x=[x_pos, x_pos], y=[sredina + 35, y_end], mode="lines", line_color="red", line_width=1.5, showlegend=False))
         fig.add_trace(go.Scatter(
@@ -243,7 +240,7 @@ if len(st.session_state.elements) > 0:
         opg_3d = el_3d["Odmik_Police_G"]
         zp_3d = el_3d["Zracnost_Polic"]
         nacin_h_3d = el_3d["Nacin_Hrbta"]
-        ouz_3d = el_3d.get("Odmik_Utora_Zadaj", 10)
+        ouz_3d = el_3d.get("Odmik_Utora_Zadaj", 5)
         gutora_3d = el_3d["Globina_Utora"]
         oh_3d = el_3d["Odmik_Hrbta"]
 
@@ -297,50 +294,4 @@ if len(st.session_state.elements) > 0:
                 camera=dict(eye=dict(x=1.5, y=1.8, z=1.2))
             ),
             margin=dict(l=0, r=0, b=0, t=0),
-            height=550,
-            dragmode='orbit'
-        )
-
-        st.plotly_chart(fig, use_container_width=True)
-        st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
-
-    with st.expander("📐 Pokaži delavniške 2D tehnične risbe s kotami (Spredaj, Stranski prerez, Od zgoraj)"):
-        tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
-        
-        with tab_spredaj:
-            st.write("Delavniška tehnična risba omarice spredaj z vsemi rdečimi kotami in višinami polic.")
-            fig_front = go.Figure()
-            
-            s_c = "#A0522D"
-            f_c = "#CD853F"
-            
-            fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line_color=s_c, line_width=2, fillcolor=f_c, opacity=0.7)
-            fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line_color=s_c, line_width=2, fillcolor=f_c, opacity=0.7)
-            fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#DEB887", opacity=0.8)
-            fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#F4A460", opacity=0.8)
-            
-            if st_polic_3d > 0:
-                notranja_visina = h_3d - (2 * d_3d)
-                korak_visine = notranja_visina / (st_polic_3d + 1)
-                sirina_kosa = w_3d - (2 * d_3d)
-                sirina_police = sirina_kosa - zp_3d
-                x_zacetek = d_3d + (zp_3d / 2)
-                for p_idx in range(st_polic_3d):
-                    z_pos = d_3d + (p_idx + 1) * korak_visine
-                    fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line_color="black", line_width=1.5, line_dash="dash", fillcolor="#20B2AA", opacity=0.8)
-                    narisi_koto_vertikalno(fig_front, 0, z_pos, w_3d + 20 + (p_idx * 45), "P" + str(p_idx+1) + ": " + str(int(z_pos)) + "mm")
-
-            narisi_koto_horizontalno(fig_front, 0, w_3d, h_3d + 35, "Širina: " + str(w_3d) + " mm")
-            narisi_koto_vertikalno(fig_front, 0, h_3d, -45, "Višina: " + str(h_3d) + " mm")
-
-            fig_front.update_layout(
-                xaxis_title="Širina (mm)", yaxis_title="Višina (mm)", height=480,
-                xaxis=dict(range=[-70, w_3d + 140]), yaxis=dict(range=[-50, h_3d + 70], scaleanchor="x", scaleratio=1), showlegend=False
-            )
-            st.plotly_chart(fig_front, use_container_width=True)
-
-        with tab_stran:
-            st.write("Stranski tehnični prerez: prikazuje globino, odmik utora za hrbet, globino polic in debelino materialov.")
-            fig_side = go.Figure()
-            fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line_color=s_c, line_width=2, fillcolor=f_c, opacity=0.4)
-            
+            height=550
