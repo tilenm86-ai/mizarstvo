@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
-st.write("Izberi prostor, vnesi omaro, določi način vgradnje hrbta in ABS robove.")
+st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz z Zoomom in Krojni List")
+st.write("Izberi prostor, vnesi omaro, določi način vgradnje hrbta, ABS robove ter upravljaj 3D model.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
-st.sidebar.header("📁 Vrsta projekta")
 vrsta_projekta = st.sidebar.selectbox(
     "Izberi prostor", 
     ["Kuhinja", "Dnevna soba", "Spalnica / Garderoba", "Kopalnica"]
@@ -60,11 +59,10 @@ globina_utora = 6
 if "V utoru" in nacin_hrbta:
     globina_utora = st.sidebar.slider("Globina utora / falca (mm)", min_value=4, max_value=10, value=6)
 
-# Odmik stropa/poda je možen SAMO takrat, ko ni utora v vseh elementih!
 if "Vsi elementi" not in nacin_hrbta:
     odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=15, value=5, key="oh_in")
 else:
-    odmik_hrbta = 0  # Ko so vsi elementi v utoru, ni odmika
+    odmik_hrbta = 0
 
 zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm)", min_value=0, max_value=10, value=2, key="zp_in")
 odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="op_in")
@@ -154,7 +152,7 @@ if len(st.session_state.elements) > 0:
         ))
 
     # --- 3D MASIVNI PRIKAZ ---
-    st.subheader("🧊 3D predogled elementa")
+    st.subheader("🧊 3D predogled elementa (Z možnostjo približevanja in vrtenja)")
     izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"])
     
     el_3d = st.session_state.elements[izbran_indeks]
@@ -184,7 +182,7 @@ if len(st.session_state.elements) > 0:
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, 0, d_3d, '#DEB887', 'Pod')
     dodaj_kvader(fig, d_3d, w_3d - d_3d, 0, globina_stropa_poda, h_3d - d_3d, h_3d, '#F4A460', 'Strop')
 
-    # 3. Hrbet 3D risanje
+    # 3. Hrbet
     if "V utoru" in nacin_h_3d:
         hrbelt_xmin = d_3d - g_utora_3d
         hrbelt_xmax = w_3d - d_3d + g_utora_3d
@@ -216,18 +214,24 @@ if len(st.session_state.elements) > 0:
             z_pos = d_3d + (p_idx + 1) * korak_visine
             dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
 
+    # Nastavitev scene z omogočenim prostim približevanjem (zoom) in vrtenjem
     fig.update_layout(
         scene=dict(
             xaxis_title='Širina (mm)',
             yaxis_title='Globina (mm)',
             zaxis_title='Višina (mm)',
-            aspectmode='data'
+            aspectmode='data',
+            camera=dict(
+                eye=dict(x=1.5, y=1.8, z=1.2)  # Začetni zorni kot kamere
+            )
         ),
         margin=dict(l=0, r=0, b=0, t=0),
-        height=550
+        height=550,
+        dragmode='orbit'  # Omogoča enostavno vrtenje in približevanje z miško/prsti
     )
 
     st.plotly_chart(fig, use_container_width=True)
+    st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali stiskanje s prsti na zaslonu. Za vrtenje modela klikni in povleci.")
 
     st.divider()
 
@@ -300,7 +304,7 @@ if len(st.session_state.elements) > 0:
                 strop_kosov = 2 if s > 600 else 1
                 vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
 
-        st.success("Krojni list z dinamičnim prilagajanjem odmika uspešno izračunan!")
+        st.success("Krojni list uspešno izračunan!")
         df_skupaj = pd.DataFrame(vsi_kosi)
         st.dataframe(df_skupaj, use_container_width=True)
 else:
