@@ -106,4 +106,27 @@ if st.sidebar.button("💾 Shrani omaro v projekt"):
         "Odmik_Utora_Zadaj": odmik_utora_zadaj,
         "Debelina_Utora": debelina_utora,
         "Globina_Utora": globina_utora,
-        "Odmik_H
+        "Odmik_Hrbta": odmik_hrbta,
+        "Zracnost_Polic": zracnost_polic_sirina,
+        "Odmik_Police_G": odmik_police_globina,
+        "ABS_Str_Spredaj": abs_str_spredaj,
+        "ABS_Str_Zgornji": abs_str_zgornji,
+        "ABS_Str_Spodnji": abs_str_spodnji,
+        "ABS_StropPod": abs_strop_pod,
+        "ABS_Polica": abs_polica,
+        "ABS_Vrata": abs_vrata
+    })
+    st.sidebar.success(f"Dodano: {ime_elementa}")
+
+# --- GLAVNI ZASLON ---
+if "elements" not in st.session_state:
+    st.session_state.elements = []
+
+st.subheader(f"📋 Seznam elementov za projekt: {vrsta_projekta}")
+
+if len(st.session_state.elements) > 0:
+    for i, el in enumerate(st.session_state.elements):
+        c1, c2 = st.columns([5, 1])
+        with c1:
+            naziv_p = el.get('Naziv', 'Element')
+            projekt_p = el.get('Projekt',
