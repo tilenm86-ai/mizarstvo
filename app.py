@@ -2,21 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-# Nastavitev strani in večji prostor za dotik kljukic na mobilnih napravah/tablicah
 st.set_page_config(layout="wide")
-
-st.markdown("""
-<style>
-    /* Povečanje območja za dotik pri vseh checkboxih v stranskem meniju */
-    .stSidebar div[data-baseweb="checkbox"] {
-        padding: 8px 0px;
-        cursor: pointer;
-    }
-    .stSidebar div[data-baseweb="checkbox"] label {
-        font-size: 16px !important;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
 st.write("Izberi prostor, vnesi omaro, določi nastavitve utora in ABS robove ter preveri 3D model.")
@@ -53,11 +39,11 @@ if ima_police:
 
 col1, col2, col3 = st.sidebar.columns(3)
 with col1:
-    sirina = st.number_input("Širina (mm)", value=800, step=10, key="input_sirina")
+    sirina = st.sidebar.number_input("Širina (mm)", value=800, step=10, key="input_sirina")
 with col2:
-    visina = st.number_input("Višina (mm)", value=720, step=10, key="input_visina")
+    visina = st.sidebar.number_input("Višina (mm)", value=720, step=10, key="input_visina")
 with col3:
-    globina = st.number_input("Globina (mm)", value=550, step=10, key="input_globina")
+    globina = st.sidebar.number_input("Globina (mm)", value=550, step=10, key="input_globina")
 
 # --- 3. KORAK: NASTAVITVE HRBTA, UTORA IN ROBOV (ABS) V STRANSKEM MENIJU ---
 st.sidebar.subheader("⚙️ Konstrukcija hrbta, utora in ABS")
@@ -91,15 +77,19 @@ zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm
 odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="input_odmik_pol")
 
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Izbira ABS robov za stranici:**")
-abs_str_spredaj = st.sidebar.checkbox("Stranica: Sprednji rob", value=True, key="cb_abs_str_spredaj")
-abs_str_zgornji = st.sidebar.checkbox("Stranica: Zgornji rob", value=False, key="cb_abs_str_zgornji")
-abs_str_spodnji = st.sidebar.checkbox("Stranica: Spodnji rob", value=False, key="cb_abs_str_spodnji")
+st.sidebar.markdown("**Izbira ABS robov (tapni za izbor):**")
 
-st.sidebar.markdown("**Izbira ABS robov za ostale dele:**")
-abs_strop_pod = st.sidebar.checkbox("Strop / Pod: ABS prednji rob", value=True, key="cb_abs_strop_pod")
-abs_polica = st.sidebar.checkbox("Police: ABS prednji rob", value=True, key="cb_abs_polica")
-abs_vrata = st.sidebar.checkbox("Vrata: ABS na vseh 4 straneh", value=True, key="cb_abs_vrata")
+# Uporaba stikal / multiselecta namesto kljukic, ker na tablicah dela 100% zanesljivo
+izbrani_robovi_stranice = st.sidebar.multiselect(
+    "Stranica - ABS robovi", 
+    ["Sprednji", "Zgornji", "Spodnji"], 
+    default=["Sprednji"],
+    key="ms_stranica"
+)
+
+abs_strop_pod_izbira = st.sidebar.selectbox("Strop / Pod - Prednji ABS", ["Da (1x rob)", "Brez"], index=0, key="sb_strop_pod")
+abs_polica_izbira = st.sidebar.selectbox("Police - Prednji ABS", ["Da (1x rob)", "Brez"], index=0, key="sb_polica")
+abs_vrata_izbira = st.sidebar.selectbox("Vrata - ABS robovi", ["Vse 4 strani", "Brez"], index=0, key="sb_vrata")
 
 if st.sidebar.button("💾 Shrani omaro v projekt", key="gumb_shrani"):
     if "elements" not in st.session_state:
@@ -122,12 +112,10 @@ if st.sidebar.button("💾 Shrani omaro v projekt", key="gumb_shrani"):
         "Odmik_Hrbta": odmik_hrbta,
         "Zracnost_Polic": zracnost_polic_sirina,
         "Odmik_Police_G": odmik_police_globina,
-        "ABS_Str_Spredaj": abs_str_spredaj,
-        "ABS_Str_Zgornji": abs_str_zgornji,
-        "ABS_Str_Spodnji": abs_str_spodnji,
-        "ABS_StropPod": abs_strop_pod,
-        "ABS_Polica": abs_polica,
-        "ABS_Vrata": abs_vrata
+        "Izbrani_Robovi_Stranice": izbrani_robovi_stranice,
+        "ABS_StropPod": abs_strop_pod_izbira,
+        "ABS_Polica": abs_polica_izbira,
+        "ABS_Vrata": abs_vrata_izbira
     })
     st.sidebar.success(f"Dodano: {ime_elementa}")
 
@@ -274,15 +262,12 @@ if len(st.session_state.elements) > 0:
             opg = el.get("Odmik_Police_G", 25)
 
             # Sestava izpisa ABS robov za stranico iz shranjenega elementa
-            str_robovi = []
-            if el.get("ABS_Str_Spredaj", True): str_robovi.append("Sprednji")
-            if el.get("ABS_Str_Zgornji", False): str_robovi.append("Zgornji")
-            if el.get("ABS_Str_Spodnji", False): str_robovi.append("Spodnji")
-            abs_s = ", ".join(str_robovi) if str_robovi else "Brez"
+            izbrani_r = el.get("Izbrani_Robovi_Stranice", [])
+            abs_s = ", ".join(izbrani_r) if izbrani_r else "Brez"
 
-            abs_sp = "1x prednji rob" if el.get("ABS_StropPod", True) else "Brez"
-            abs_p = "1x sprednji rob" if el.get("ABS_Polica", True) else "Brez"
-            abs_v = "Vse 4 strani" if el.get("ABS_Vrata", True) else "Brez"
+            abs_sp = "1x prednji rob" if el.get("ABS_StropPod") == "Da (1x rob)" else "Brez"
+            abs_p = "1x sprednji rob" if el.get("ABS_Polica") == "Da (1x rob)" else "Brez"
+            abs_v = "Vse 4 strani" if el.get("ABS_Vrata") == "Vse 4 strani" else "Brez"
 
             # 1. Stranici
             vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v, "Robni trak (ABS)": abs_s})
