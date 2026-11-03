@@ -163,7 +163,8 @@ if len(st.session_state.elements) > 0:
             color=color, opacity=0.9, name=name, showscale=False
         ))
 
-    with st.expander("🧊 Pokaži 3D predogled omare"):
+    # --- 3D PREDOGLED ---
+    with st.expander("🧊 Pokaži 3D predogled omare", expanded=True):
         izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="select_3d_index")
         
         el_3d = st.session_state.elements[izbran_indeks]
@@ -204,10 +205,12 @@ if len(st.session_state.elements) > 0:
         )
         st.plotly_chart(fig, use_container_width=True)
 
-    with st.expander("📐 Pokaži delavniške 2D tehnične risbe"):
+    # --- 2D TEHNIČNI IZRISI (SAMOSTOJEN EXPANDER) ---
+    with st.expander("📐 Pokaži delavniške 2D tehnične risbe (Spredaj, Stran, Zgoraj)", expanded=True):
         tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
         
         with tab_spredaj:
+            st.write("Tehnična risba omarice gledano od spredaj.")
             fig_front = go.Figure()
             fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line_color="#A0522D", fillcolor="#CD853F", opacity=0.7)
             fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line_color="#A0522D", fillcolor="#CD853F", opacity=0.7)
@@ -217,12 +220,14 @@ if len(st.session_state.elements) > 0:
             st.plotly_chart(fig_front, use_container_width=True)
 
         with tab_stran:
+            st.write("Stranski prerez omare.")
             fig_side = go.Figure()
             fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line_color="#A0522D", fillcolor="#CD853F", opacity=0.4)
             fig_side.update_layout(xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=400, showlegend=False)
             st.plotly_chart(fig_side, use_container_width=True)
 
         with tab_zgoraj:
+            st.write("Tloris omare od zgoraj.")
             fig_top = go.Figure()
             fig_top.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=depth_3d, line_color="#A0522D", fillcolor="#CD853F", opacity=0.7)
             fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line_color="#A0522D", fillcolor="#CD853F", opacity=0.7)
@@ -231,6 +236,7 @@ if len(st.session_state.elements) > 0:
 
     st.divider()
 
+    # --- KROJNI LIST ---
     if st.button("🧮 Izračunaj skupni krojni list in robne trakove", type="primary", key="gumb_izracun"):
         vsi_kosi = []
         for el in st.session_state.elements:
@@ -266,4 +272,4 @@ if len(st.session_state.elements) > 0:
                 vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
 
         st.success("Krojni list z vsemi nastavitvami uspešno izračunan!")
-        st.dataframe(pd.DataFrame(vsi_kosi), use_container_width=True)
+        st.dataframe(df_skupaj := pd.DataFrame(vsi_kosi), use_container_width=True)
