@@ -307,4 +307,7 @@ if len(st.session_state.elements) > 0:
         with tab_spredaj:
             st.write("Delavniška tehnična risba omarice spredaj z vsemi rdečimi kotami in višinami polic.")
             fig_front = go.Figure()
-            fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F",
+            
+            # Poenostavljeni risalni ukazi brez gnezdenja
+            s_c = "#A0522D"
+            f
