@@ -45,7 +45,7 @@ with col2:
 with col3:
     globina = st.number_input("Globina (mm)", value=550, step=10)
 
-# --- 3. KORAK: NASTAVITve HRBTA IN ROBOV (ABS) ---
+# --- 3. KORAK: NASTAVITVE HRBTA IN ROBOV (ABS) ---
 st.sidebar.subheader("⚙️ Konstrukcija hrbta in ABS robovi")
 nacin_hrbta = st.sidebar.selectbox(
     "Vgradnja hrbta", 
@@ -187,20 +187,20 @@ if len(st.session_state.elements) > 0:
 
     dodaj_kvader(fig, hrbelt_xmin, hrbelt_xmax, depth_3d - 5, depth_3d, hrbelt_zmin, hrbelt_zmax, '#B0C4DE', 'Hrbet (5mm)')
 
-    # 6. Police (pomaknjene nazaj proti hrbtu z upoštevanjem opg_3d)
+    # 6. Police (pomaknjene nazaj k hrbtu)
     if st_polic_3d > 0:
         notranja_visina = h_3d - (2 * d_3d)
         korak_visine = notranja_visina / (st_polic_3d + 1)
         sirina_kosa = w_3d - (2 * d_3d)
         sirina_police = sirina_kosa - zp_3d
         
-        # Police so pomaknjene od spredaj nazaj (zajemajo globino od 0 do globina_police)
-        globina_police = depth_3d - opg_3d
+        zacetek_y_police = opg_3d
+        globina_police = depth_3d - opg_3d - el_3d["Odmik_Hrbta"]
         x_zacetek = d_3d + (zp_3d / 2)
 
         for p_idx in range(st_polic_3d):
             z_pos = d_3d + (p_idx + 1) * korak_visine
-            dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, 0, globina_police, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
+            dodaj_kvader(fig, x_zacetek, x_zacetek + sirina_police, zacetek_y_police, zacetek_y_police + globina_police, z_pos, z_pos + d_3d, '#20B2AA', f'Polica {p_idx+1}')
 
     fig.update_layout(
         scene=dict(
