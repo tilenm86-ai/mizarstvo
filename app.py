@@ -2,6 +2,22 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
+# Nastavitev strani in večji prostor za dotik kljukic na mobilnih napravah/tablicah
+st.set_page_config(layout="wide")
+
+st.markdown("""
+<style>
+    /* Povečanje območja za dotik pri vseh checkboxih v stranskem meniju */
+    .stSidebar div[data-baseweb="checkbox"] {
+        padding: 8px 0px;
+        cursor: pointer;
+    }
+    .stSidebar div[data-baseweb="checkbox"] label {
+        font-size: 16px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
 st.write("Izberi prostor, vnesi omaro, določi nastavitve utora in ABS robove ter preveri 3D model.")
 
