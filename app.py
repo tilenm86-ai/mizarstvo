@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("🪚 Mizarski Kalkulator: Interaktivni Robni Trakovi in 3D")
-st.write("Izberi prostor, vnesi omaro, določi ABS robove in preveri krojni list.")
+st.title("🪚 Mizarski Kalkulator: 3D Prikaz z ABS Robovi in Krojni List")
+st.write("Izberi prostor, vnesi omaro, določi ABS robove ter preveri 3D barvni model in krojni list.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
 st.sidebar.header("📁 Vrsta projekta")
@@ -45,7 +45,7 @@ with col2:
 with col3:
     globina = st.number_input("Globina (mm)", value=550, step=10)
 
-# --- 3. KORAK: NASTAVITve HRBTA IN ROBOV (ABS) ---
+# --- 3. KORAK: NASTAVITVE HRBTA IN ROBOV (ABS) ---
 st.sidebar.subheader("⚙️ Konstrukcija hrbta in ABS robovi")
 nacin_hrbta = st.sidebar.selectbox(
     "Vgradnja hrbta", 
@@ -60,7 +60,6 @@ odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max
 zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm)", min_value=0, max_value=10, value=2, key="zp_in")
 odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="op_in")
 
-# Izbira robov (ABS) po posameznih kosih
 st.sidebar.markdown("---")
 st.sidebar.markdown("**Izbira ABS robov za elemente:**")
 abs_stranica = st.sidebar.checkbox("Stranici: ABS sprednji dolgi rob", value=True)
@@ -110,8 +109,9 @@ if len(st.session_state.elements) > 0:
             s_p = el.get('Širina', 0)
             v_p = el.get('Višina', 0)
             g_p = el.get('Globina', 0)
+            pol_p = el.get('Police', 0)
             
-            st.write(f"**{i+1}. {naziv_p}** ({projekt_p} ➔ *{tip_p}*) — Š: {s_p} mm, V: {v_p} mm, G: {g_p} mm")
+            st.write(f"**{i+1}. {naziv_p}** ({projekt_p} ➔ *{tip_p}*) — Š: {s_p} mm, V: {v_p} mm, G: {g_p} mm | Police: {pol_p}")
         with c2:
             if st.button("❌", key=f"del_{i}"):
                 st.session_state.elements.pop(i)
@@ -123,8 +123,8 @@ if len(st.session_state.elements) > 0:
 
     st.divider()
 
-    # --- 3D PRIKAZ POSAMEZne OMARE ---
-    st.subheader("🧊 3D Predogled elementa")
+    # --- 3D BARVNI PRIKAZ Z OZNAČENIMI ABS ROBOVI (RDEČA BARVA) ---
+    st.subheader("🧊 3D predogled elementa (Z označenimi ABS robovi v rdeči barvi)")
     izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"])
     
     el_3d = st.session_state.elements[izbran_indeks]
@@ -132,40 +132,97 @@ if len(st.session_state.elements) > 0:
     w_3d = el_3d["Širina"]
     h_3d = el_3d["Višina"]
     depth_3d = el_3d["Globina"]
+    st_polic_3d = el_3d["Police"]
+    opg_3d = el_3d["Odmik_Police_G"]
+    zp_3d = el_3d["Zracnost_Polic"]
 
     fig = go.Figure()
 
-    # Leva stranica
+    # 1. Leva stranica
     fig.add_trace(go.Mesh3d(
         x=[0, d_3d, d_3d, 0, 0, d_3d, d_3d, 0],
         y=[0, 0, depth_3d, depth_3d, 0, 0, depth_3d, depth_3d],
         z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
-        color='burlywood', opacity=0.8, name='Leva stranica'
+        color='#8B5A2B', opacity=0.8, name='Leva stranica'
     ))
+    # ABS rob leve stranice (spredaj-zgoraj rob)
+    if el_3d.get("ABS_Stranica", True):
+        fig.add_trace(go.Mesh3d(
+            x=[0, d_3d, d_3d, 0, 0, d_3d, d_3d, 0],
+            y=[0, 0, 0, 0, 0, 0, 0, 0], # sprednji rob
+            z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
+            color='red', opacity=0.9, name='ABS rob (Stranica)'
+        ))
 
-    # Desna stranica
+    # 2. Desna stranica
     fig.add_trace(go.Mesh3d(
         x=[w_3d - d_3d, w_3d, w_3d, w_3d - d_3d, w_3d - d_3d, w_3d, w_3d, w_3d - d_3d],
         y=[0, 0, depth_3d, depth_3d, 0, 0, depth_3d, depth_3d],
         z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
-        color='burlywood', opacity=0.8, name='Desna stranica'
+        color='#CD853F', opacity=0.8, name='Desna stranica'
     ))
+    if el_3d.get("ABS_Stranica", True):
+        fig.add_trace(go.Mesh3d(
+            x=[w_3d - d_3d, w_3d, w_3d, w_3d - d_3d, w_3d - d_3d, w_3d, w_3d, w_3d - d_3d],
+            y=[0, 0, 0, 0, 0, 0, 0, 0],
+            z=[0, 0, 0, 0, h_3d, h_3d, h_3d, h_3d],
+            color='red', opacity=0.9, name='ABS rob (Desna stranica)'
+        ))
 
-    # Pod
+    # 3. Pod
     fig.add_trace(go.Mesh3d(
         x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
         y=[0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"], 0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"]],
         z=[0, 0, 0, 0, d_3d, d_3d, d_3d, d_3d],
-        color='sandybrown', opacity=0.9, name='Pod'
+        color='#DEB887', opacity=0.85, name='Pod'
     ))
+    if el_3d.get("ABS_StropPod", True):
+        fig.add_trace(go.Mesh3d(
+            x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
+            y=[0, 0, 0, 0, 0, 0, 0, 0], # sprednji rob poda
+            z=[0, 0, 0, 0, d_3d, d_3d, d_3d, d_3d],
+            color='red', opacity=0.9, name='ABS rob (Pod)'
+        ))
 
-    # Strop
+    # 4. Strop
     fig.add_trace(go.Mesh3d(
         x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
         y=[0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"], 0, 0, depth_3d - el_3d["Odmik_Hrbta"], depth_3d - el_3d["Odmik_Hrbta"]],
         z=[h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d, h_3d, h_3d, h_3d],
-        color='sandybrown', opacity=0.9, name='Strop'
+        color='#F4A460', opacity=0.85, name='Strop'
     ))
+    if el_3d.get("ABS_StropPod", True):
+        fig.add_trace(go.Mesh3d(
+            x=[d_3d, w_3d - d_3d, w_3d - d_3d, d_3d, d_3d, w_3d - d_3d, w_3d - d_3d, d_3d],
+            y=[0, 0, 0, 0, 0, 0, 0, 0], # sprednji rob stropa
+            z=[h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d - d_3d, h_3d, h_3d, h_3d, h_3d],
+            color='red', opacity=0.9, name='ABS rob (Strop)'
+        ))
+
+    # 5. Police in njihovi ABS robovi
+    if st_polic_3d > 0:
+        notranja_visina = h_3d - (2 * d_3d)
+        korak_visine = notranja_visina / (st_polic_3d + 1)
+        sirina_kosa = w_3d - (2 * d_3d)
+        sirina_police = sirina_kosa - zp_3d
+        globina_police = depth_3d - opg_3d
+        x_zacetek = d_3d + (zp_3d / 2)
+
+        for p_idx in range(st_polic_3d):
+            z_pos = d_3d + (p_idx + 1) * korak_visine
+            fig.add_trace(go.Mesh3d(
+                x=[x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek, x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek],
+                y=[0, 0, globina_police, globina_police, 0, 0, globina_police, globina_police],
+                z=[z_pos, z_pos, z_pos, z_pos, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d],
+                color='#20B2AA', opacity=0.8, name=f'Polica {p_idx+1}'
+            ))
+            if el_3d.get("ABS_Polica", True):
+                fig.add_trace(go.Mesh3d(
+                    x=[x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek, x_zacetek, x_zacetek + sirina_police, x_zacetek + sirina_police, x_zacetek],
+                    y=[0, 0, 0, 0, 0, 0, 0, 0], # sprednji rob police
+                    z=[z_pos, z_pos, z_pos, z_pos, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d, z_pos + d_3d],
+                    color='red', opacity=0.9, name=f'ABS rob (Polica {p_idx+1})'
+                ))
 
     fig.update_layout(
         scene=dict(
@@ -175,7 +232,7 @@ if len(st.session_state.elements) > 0:
             aspectmode='data'
         ),
         margin=dict(l=0, r=0, b=0, t=0),
-        height=450
+        height=500
     )
 
     st.plotly_chart(fig, use_container_width=True)
@@ -200,7 +257,6 @@ if len(st.session_state.elements) > 0:
             zp = el.get("Zracnost_Polic", 2)
             opg = el.get("Odmik_Police_G", 25)
 
-            # ABS izbire iz shranjenega elementa
             abs_s = "1x dolgi rob (spredaj)" if el.get("ABS_Stranica", True) else "Brez"
             abs_sp = "1x prednji rob" if el.get("ABS_StropPod", True) else "Brez"
             abs_p = "1x sprednji rob" if el.get("ABS_Polica", True) else "Brez"
@@ -226,19 +282,4 @@ if len(st.session_state.elements) > 0:
             
             # 4. Police
             if st_polic > 0:
-                sirina_police = sirina_kosa - zp
-                globina_police = g - opg
-                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
-            
-            # 5. Vrata
-            if ima_v:
-                visina_vrat = v - 4
-                sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
-                strop_kosov = 2 if s > 600 else 1
-                vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
-
-        st.success("Krojni list z izbranimi ABS robovi uspešno izračunan!")
-        df_skupaj = pd.DataFrame(vsi_kosi)
-        st.dataframe(df_skupaj, use_container_width=True)
-else:
-    st.info("V projektu še ni elementov. Izberite prostor in dodajte prvo omaro.")
+                sirina_police = sirina_kosa
