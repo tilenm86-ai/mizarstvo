@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 
 st.set_page_config(layout="wide")
 
-st.title("🪚 Mizarski Kalkulator: 3D, Krojni List in 2D Preresi")
+st.title("🪚 Mizarski Kalkulator: 3D, Krojni List in 2D Tehnični Pledi")
 st.write("Izberi prostor, vnesi omaro, določi nastavitve utora in ABS robove ter preveri izrise.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
@@ -243,113 +243,89 @@ if len(st.session_state.elements) > 0:
     st.plotly_chart(fig, use_container_width=True)
     st.info("💡 Namig: Za približevanje (zoom) uporabi kolesce miške ali prste. Za vrtenje modela klikni in povleci.")
 
-    # --- 2D TEHNIČNI PREREZ (DODATNI PREDALČEK / EXPANDER) ---
-    with st.expander("📐 Pokaži 2D tehnični prerez (Stranski pogled z utorom in policami)"):
-        st.write("Tehnični prerez omare s stranskega pogleda (prikazuje debelino materialov, utor za hrbet in pozicijo polic).")
+    # --- 2D TEHNIČNI PREREZI (Z ZAVIHKI V DODATNEM PREDALČKU) ---
+    with st.expander("📐 Pokaži 2D tehnične poglede (Spredaj, Stranski prerez, Od zgoraj)"):
+        tab_spredaj, tab_stran, tab_zgoraj = st.tabs(["Pogled od spredaj", "Pogled od strani", "Pogled od zgoraj (Tloris)"])
         
-        fig_2d = go.Figure()
-        
-        # Risanje stranskega prereza (2D v Y-Z ravnini)
-        # 1. Stranica (kot pravokotnik v 2D: y od 0 do depth, z od 0 do height)
-        fig_2d.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d,
-                         line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.6)
-        
-        # 2. Utor za hrbet
-        ut_y_zacetek = depth_3d - ouz_3d
-        fig_2d.add_shape(type="rect", x0=ut_y_zacetek, y0=-gutora_3d if "Vsi elementi" in nacin_h_3d else 0,
-                         x1=ut_y_zacetek + debelina_utora, y1=h_3d + (gutora_3d if "Vsi elementi" in nacin_h_3d else 0),
-                         line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
+        # 1. ZAVIHEK: POGLED OD SPREDAJ
+        with tab_spredaj:
+            st.write("Skica omare gledano od spredaj (prikazuje stranice, strop, pod in police).")
+            fig_front = go.Figure()
+            # Leva stranica
+            fig_front.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
+            # Desna stranica
+            fig_front.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
+            # Pod
+            fig_front.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=d_3d, line=dict(color="#DEB887", width=2), fillcolor="#DEB887", opacity=0.8)
+            # Strop
+            fig_front.add_shape(type="rect", x0=d_3d, y0=h_3d-d_3d, x1=w_3d-d_3d, y1=h_3d, line=dict(color="#F4A460", width=2), fillcolor="#F4A460", opacity=0.8)
+            
+            # Police od spredaj
+            if st_polic_3d > 0:
+                notranja_visina = h_3d - (2 * d_3d)
+                korak_visine = notranja_visina / (st_polic_3d + 1)
+                sirina_kosa = w_3d - (2 * d_3d)
+                sirina_police = sirina_kosa - zp_3d
+                x_zacetek = d_3d + (zp_3d / 2)
+                for p_idx in range(st_polic_3d):
+                    z_pos = d_3d + (p_idx + 1) * korak_visine
+                    fig_front.add_shape(type="rect", x0=x_zacetek, y0=z_pos, x1=x_zacetek + sirina_police, y1=z_pos + d_3d, line=dict(color="black", width=1), fillcolor="#20B2AA", opacity=0.9)
 
-        # 3. Police v 2D stranskem pogledu
-        if st_polic_3d > 0:
-            notranja_visina = h_3d - (2 * d_3d)
-            korak_visine = notranja_visina / (st_polic_3d + 1)
-            globina_police_2d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
-            zacetek_y_pol_2d = depth_3d - gutora_3d - opg_3d - globina_police_2d
+            fig_front.update_layout(
+                xaxis_title="Širina (mm)", yaxis_title="Višina (mm)", height=400,
+                xaxis=dict(range=[-50, w_3d + 50]), yaxis=dict(range=[-50, h_3d + 50], scaleanchor="x", scaleratio=1), showlegend=False
+            )
+            st.plotly_chart(fig_front, use_container_width=True)
 
-            for p_idx in range(st_polic_3d):
-                z_pos = d_3d + (p_idx + 1) * korak_visine
-                fig_2d.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos,
-                                 x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d,
-                                 line=dict(color="black", width=1), fillcolor="#20B2AA", opacity=0.9)
+        # 2. ZAVIHEK: POGLED OD STRANI
+        with tab_stran:
+            st.write("Stranski prerez omare (prikazuje globino, utor za hrbet in police).")
+            fig_side = go.Figure()
+            fig_side.add_shape(type="rect", x0=0, y0=0, x1=depth_3d, y1=h_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.6)
+            
+            ut_y_zacetek = depth_3d - ouz_3d
+            fig_side.add_shape(type="rect", x0=ut_y_zacetek, y0=-gutora_3d if "Vsi elementi" in nacin_h_3d else 0,
+                             x1=ut_y_zacetek + debelina_utora, y1=h_3d + (gutora_3d if "Vsi elementi" in nacin_h_3d else 0),
+                             line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
 
-        fig_2d.update_layout(
-            xaxis_title="Globina (mm)",
-            yaxis_title="Višina (mm)",
-            height=450,
-            xaxis=dict(range=[-20, depth_3d + 20], constrain="domain"),
-            yaxis=dict(range=[-20, h_3d + 20], scaleanchor="x", scaleratio=1),
-            showlegend=False
-        )
-        st.plotly_chart(fig_2d, use_container_width=True)
+            if st_polic_3d > 0:
+                notranja_visina = h_3d - (2 * d_3d)
+                korak_visine = notranja_visina / (st_polic_3d + 1)
+                globina_police_2d = depth_3d - gutora_3d - opg_3d - (oh_3d if "Samo stranice" in nacin_h_3d else 0)
+                zacetek_y_pol_2d = depth_3d - gutora_3d - opg_3d - globina_police_2d
+
+                for p_idx in range(st_polic_3d):
+                    z_pos = d_3d + (p_idx + 1) * korak_visine
+                    fig_side.add_shape(type="rect", x0=zacetek_y_pol_2d, y0=z_pos, x1=zacetek_y_pol_2d + globina_police_2d, y1=z_pos + d_3d, line=dict(color="black", width=1), fillcolor="#20B2AA", opacity=0.9)
+
+            fig_side.update_layout(
+                xaxis_title="Globina (mm)", yaxis_title="Višina (mm)", height=400,
+                xaxis=dict(range=[-50, depth_3d + 50]), yaxis=dict(range=[-50, h_3d + 50], scaleanchor="x", scaleratio=1), showlegend=False
+            )
+            st.plotly_chart(fig_side, use_container_width=True)
+
+        # 3. ZAVIHEK: POGLED OD ZGORAJ (TLORIS)
+        with tab_zgoraj:
+            st.write("Tloris omare gledano od zgoraj (prikazuje širino, globino in utor za hrbet).")
+            fig_top = go.Figure()
+            # Leva stranica od zgoraj
+            fig_top.add_shape(type="rect", x0=0, y0=0, x1=d_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
+            # Desna stranica od zgoraj
+            fig_top.add_shape(type="rect", x0=w_3d-d_3d, y0=0, x1=w_3d, y1=depth_3d, line=dict(color="#A0522D", width=2), fillcolor="#CD853F", opacity=0.7)
+            # Strop (zgoraj)
+            fig_top.add_shape(type="rect", x0=d_3d, y0=0, x1=w_3d-d_3d, y1=globina_stropa_poda, line=dict(color="#F4A460", width=2), fillcolor="#F4A460", opacity=0.7)
+            # Hrbet od zgoraj
+            fig_top.add_shape(type="rect", x0=d_3d-gutora_3d, y0=depth_3d-ouz_3d, x1=w_3d-d_3d+gutora_3d, y1=depth_3d-ouz_3d+5, line=dict(color="blue", width=1), fillcolor="#B0C4DE", opacity=0.8)
+
+            fig_top.update_layout(
+                xaxis_title="Širina (mm)", yaxis_title="Globina (mm)", height=400,
+                xaxis=dict(range=[-50, w_3d + 50]), yaxis=dict(range=[-50, depth_3d + 50], scaleanchor="x", scaleratio=1), showlegend=False
+            )
+            st.plotly_chart(fig_top, use_container_width=True)
 
     st.divider()
 
     # --- 4. IZRAČUN ---
     if st.button("🧮 Izračunaj skupni krojni list in robne trakove", type="primary", key="gumb_izracun"):
         vsi_kosi = []
-        for el in st.session_state.elements:
-            d = el.get("Debelina", 18)
-            s = el.get("Širina", 800)
-            v = el.get("Višina", 720)
-            g = el.get("Globina", 550)
-            naziv = el.get("Naziv", "Element")
-            st_polic = el.get("Police", 0)
-            ima_v = el.get("Vrata", False)
-            
-            nacin_h = el.get("Nacin_Hrbta", "")
-            gutora = el.get("Globina_Utora", 6)
-            oh = el.get("Odmik_Hrbta", 0)
-            zp = el.get("Zracnost_Polic", 2)
-            opg = el.get("Odmik_Police_G", 25)
-
-            izbrani_r_str = el.get("Izbrani_Robovi_Stranice", [])
-            abs_s = ", ".join(izbrani_r_str) if izbrani_r_str else "Brez"
-
-            izbrani_r_sp = el.get("Izbrani_Robovi_StropPod", [])
-            abs_sp = ", ".join(izbrani_r_sp) if izbrani_r_sp else "Brez"
-
-            abs_p = "1x sprednji rob" if el.get("ABS_Polica") == "Da (1x rob)" else "Brez"
-            abs_v = "Vse 4 strani" if el.get("ABS_Vrata") == "Vse 4 strani" else "Brez"
-
-            # 1. Stranici
-            vsi_kosi.append({"Omarica": naziv, "Del": "Stranica", "Količina": 2, "Širina (mm)": g, "Dolžina/Višina (mm)": v, "Robni trak (ABS)": abs_s})
-            
-            # 2. Strop in pod
-            sirina_kosa = s - (2 * d)
-            if "Vsi elementi" in nacin_h:
-                globina_stropa_poda = g + gutora
-            else:
-                globina_stropa_poda = g - oh
-
-            vsi_kosi.append({"Omarica": naziv, "Del": "Strop / Pod", "Količina": 2, "Širina (mm)": globina_stropa_poda, "Dolžina/Višina (mm)": sirina_kosa, "Robni trak (ABS)": abs_sp})
-            
-            # 3. Hrbtni del
-            zracnost_visina = 2
-            if "Samo stranice" in nacin_h:
-                sirina_hrbta = s + (2 * gutora)
-                visina_hrbta = v - zracnost_visina
-            else:
-                sirina_hrbta = s + (2 * gutora)
-                visina_hrbta = v + (2 * gutora) - zracnost_visina
-                
-            vsi_kosi.append({"Omarica": naziv, "Del": "Hrbtni del (MDF/HDF 5mm)", "Količina": 1, "Širina (mm)": sirina_hrbta, "Dolžina/Višina (mm)": visina_hrbta, "Robni trak (ABS)": "Brez"})
-            
-            # 4. Police
-            if st_polic > 0:
-                sirina_police = sirina_kosa - zp
-                globina_police = g - gutora - opg - oh
-                vsi_kosi.append({"Omarica": naziv, "Del": "Police", "Količina": st_polic, "Širina (mm)": globina_police, "Dolžina/Višina (mm)": sirina_police, "Robni trak (ABS)": abs_p})
-            
-            # 5. Vrata
-            if ima_v:
-                visina_vrat = v - 4
-                sirina_vrat = (s / 2) - 3 if s > 600 else s - 4
-                strop_kosov = 2 if s > 600 else 1
-                vsi_kosi.append({"Omarica": naziv, "Del": "Vrata", "Količina": strop_kosov, "Širina (mm)": sirina_vrat, "Dolžina/Višina (mm)": visina_vrat, "Robni trak (ABS)": abs_v})
-
-        st.success("Krojni list z vsemi nastavitvami uspešno izračunan!")
-        df_skupaj = pd.DataFrame(vsi_kosi)
-        st.dataframe(df_skupaj, use_container_width=True)
-else:
-    st.info("V projektu še ni elementov. Izberite prostor in dodajte prvo omaro v stranskem meniju.")
+        
