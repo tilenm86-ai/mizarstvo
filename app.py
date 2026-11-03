@@ -3,12 +3,13 @@ import pandas as pd
 import plotly.graph_objects as go
 
 st.title("🪚 Mizarski Kalkulator: 3D Masivni Prikaz in Krojni List")
-st.write("Izberi prostor, vnesi omaro, določi nastavitve utora (odmik za obešala in globino), ABS robove ter preveri 3D model.")
+st.write("Izberi prostor, vnesi omaro, določi nastavitve utora in ABS robove ter preveri 3D model.")
 
 # --- 1. KORAK: IZBIRA PROJEKTA (PROSTORA) ---
-vrsta_projekta = st.sidebar.selectbox(
+vrsta_projekta = st.selectbox(
     "Izberi prostor", 
-    ["Kuhinja", "Dnevna soba", "Spalnica / Garderoba", "Kopalnica"]
+    ["Kuhinja", "Dnevna soba", "Spalnica / Garderoba", "Kopalnica"],
+    key="vrsta_projekta_sel"
 )
 
 if vrsta_projekta == "Kuhinja":
@@ -20,73 +21,80 @@ elif vrsta_projekta == "Spalnica / Garderoba":
 else:
     mozne_omare = ["Kopalniška omarica pod umivalnikom", "Visoka kopalniška omara z ogledalom"]
 
-# --- 2. KORAK: VNOS ELEMENTA ---
-st.sidebar.divider()
-st.sidebar.header("➕ Dodaj element v projekt")
-ime_elementa = st.sidebar.text_input("Naziv elementa", value="Omarica 1")
+st.divider()
+st.subheader("➕ Vnos elementa in nastavitve")
 
-tip_elementa = st.sidebar.selectbox("Vrsta omare za ta prostor", mozne_omare)
+col_vnos1, col_vnos2 = st.columns(2)
 
-debelina = st.sidebar.number_input("Debelina materiala (mm)", value=18, step=1)
+with col_vnos1:
+    ime_elementa = st.text_input("Naziv elementa", value="Omarica 1", key="ime_el")
+    tip_elementa = st.selectbox("Vrsta omare za ta prostor", mozne_omare, key="tip_el")
+    debelina = st.number_input("Debelina materiala (mm)", value=18, step=1, key="deb_el")
 
-ima_police = "polic" in tip_elementa or "knjižna" in tip_elementa
-ima_vrata = "vrati" in tip_elementa or "vitrina" in tip_elementa or "omara" in tip_elementa
+    ima_police = "polic" in tip_elementa or "knjižna" in tip_elementa
+    ima_vrata = "vrati" in tip_elementa or "vitrina" in tip_elementa or "omara" in tip_elementa
 
-stevilo_polic = 0
-if ima_police:
-    stevilo_polic = st.sidebar.slider("Število polic", min_value=1, max_value=10, value=2, key="st_polic_slider")
+    stevilo_polic = 0
+    if ima_police:
+        stevilo_polic = st.slider("Število polic", min_value=1, max_value=10, value=2, key="st_polic_sl")
 
-col1, col2, col3 = st.sidebar.columns(3)
-with col1:
-    sirina = st.number_input("Širina (mm)", value=800, step=10, key="sirina_input")
-with col2:
-    visina = st.number_input("Višina (mm)", value=720, step=10, key="visina_input")
-with col3:
-    globina = st.number_input("Globina (mm)", value=550, step=10, key="globina_input")
+with col_vnos2:
+    c_s, c_v, c_g = st.columns(3)
+    with c_s:
+        sirina = st.number_input("Širina (mm)", value=800, step=10, key="s_in")
+    with c_v:
+        visina = st.number_input("Višina (mm)", value=720, step=10, key="v_in")
+    with c_g:
+        globina = st.number_input("Globina (mm)", value=550, step=10, key="g_in")
 
-# --- 3. KORAK: NASTAVITVE HRBTA, UTORA IN ROBOV (ABS) ---
-st.sidebar.subheader("⚙️ Konstrukcija hrbta, utora in ABS")
-nacin_hrbta = st.sidebar.selectbox(
-    "Vgradnja hrbta", 
-    [
-        "V utoru: Samo stranice (strop in pod brez utora)",
-        "V utoru: Vsi elementi (stranice, strop, pod)"
-    ],
-    key="nacin_hrbta_select"
-)
+st.markdown("---")
+st.subheader("⚙️ Konstrukcija hrbta, utora in ABS robovi")
 
-privzeti_odmik = 20 if "Viseča" in tip_elementa or "vitrina" in tip_elementa else 10
+col_konstr1, col_konstr2 = st.columns(2)
 
-odmik_utora_zadaj = st.sidebar.slider("Odmik utora od zadnjega roba (mm)", min_value=5, max_value=35, value=privzeti_odmik, key="ouz_slider", help="Za viseče omare z obešali nastavi npr. 20-25 mm")
-debelina_utora = st.sidebar.slider("Debelina utora (širina reza v mm)", min_value=4, max_value=8, value=6, key="dutora_slider")
-globina_utora = st.sidebar.slider("Globina utora (v globino materiala v mm)", min_value=4, max_value=15, value=6, key="gutora_slider")
+with col_konstr1:
+    nacin_hrbta = st.selectbox(
+        "Vgradnja hrbta", 
+        [
+            "V utoru: Samo stranice (strop in pod brez utora)",
+            "V utoru: Vsi elementi (stranice, strop, pod)"
+        ],
+        key="nacin_hrbta_s"
+    )
 
-preostanek_mesa = debelina - globina_utora
-if preostanek_mesa < 4:
-    st.sidebar.warning(f"⚠️ Pozor! Zadaj za privijačenje ostane samo {preostanek_mesa} mm materiala.")
-else:
-    st.sidebar.info(f"ℹ️ Zadaj za privijačenje ostane {preostanek_mesa} mm materiala.")
+    privzeti_odmik = 20 if "Viseča" in tip_elementa or "vitrina" in tip_elementa else 10
 
-if "Samo stranice" in nacin_hrbta:
-    odmik_hrbta = st.sidebar.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=30, value=5, key="oh_in")
-else:
-    odmik_hrbta = 0
+    odmik_utora_zadaj = st.slider("Odmik utora od zadnjega roba (mm)", min_value=5, max_value=35, value=privzeti_odmik, key="ouz_sl")
+    debelina_utora = st.slider("Debelina utora (širina reza v mm)", min_value=4, max_value=8, value=6, key="dutora_sl")
+    globina_utora = st.slider("Globina utora (v globino materiala v mm)", min_value=4, max_value=15, value=6, key="gutora_sl")
 
-zracnost_polic_sirina = st.sidebar.slider("Zračnost police širina - skupaj (mm)", min_value=0, max_value=10, value=2, key="zp_in")
-odmik_police_globina = st.sidebar.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="op_in")
+    preostanek_mesa = debelina - globina_utora
+    if preostanek_mesa < 4:
+        st.warning(f"⚠️ Pozor! Zadaj za privijačenje ostane samo {preostanek_mesa} mm materiala.")
+    else:
+        st.info(f"ℹ️ Zadaj za privijačenje ostane {preostanek_mesa} mm materiala.")
 
-st.sidebar.markdown("---")
-st.sidebar.markdown("**Izbira ABS robov za stranici:**")
-abs_str_spredaj = st.sidebar.checkbox("Stranica: Sprednji rob", value=True, key="abs_str_spredaj")
-abs_str_zgornji = st.sidebar.checkbox("Stranica: Zgornji rob", value=False, key="abs_str_zgornji")
-abs_str_spodnji = st.sidebar.checkbox("Stranica: Spodnji rob", value=False, key="abs_str_spodnji")
+    if "Samo stranice" in nacin_hrbta:
+        odmik_hrbta = st.slider("Odmik stropa/poda zadaj (mm)", min_value=0, max_value=30, value=5, key="oh_sl")
+    else:
+        odmik_hrbta = 0
 
-st.sidebar.markdown("**Izbira ABS robov za ostale dele:**")
-abs_strop_pod = st.sidebar.checkbox("Strop / Pod: ABS prednji rob", value=True, key="abs_strop_pod")
-abs_polica = st.sidebar.checkbox("Police: ABS prednji rob", value=True, key="abs_polica")
-abs_vrata = st.sidebar.checkbox("Vrata: ABS na vseh 4 straneh", value=True, key="abs_vrata")
+    zracnost_polic_sirina = st.slider("Zračnost police širina - skupaj (mm)", min_value=0, max_value=10, value=2, key="zp_sl")
+    odmik_police_globina = st.slider("Koliko je polica krajša od globine omare (mm)", min_value=10, max_value=50, value=25, key="op_sl")
 
-if st.sidebar.button("💾 Shrani omaro v projekt", key="shrani_gumb"):
+with col_konstr2:
+    st.markdown("**Izbira ABS robov za stranici:**")
+    abs_str_spredaj = st.checkbox("Stranica: Sprednji rob", value=True, key="abs_str_spredaj_cb")
+    abs_str_zgornji = st.checkbox("Stranica: Zgornji rob", value=False, key="abs_str_zgornji_cb")
+    abs_str_spodnji = st.checkbox("Stranica: Spodnji rob", value=False, key="abs_str_spodnji_cb")
+
+    st.markdown("---")
+    st.markdown("**Izbira ABS robov za ostale dele:**")
+    abs_strop_pod = st.checkbox("Strop / Pod: ABS prednji rob", value=True, key="abs_strop_pod_cb")
+    abs_polica = st.checkbox("Police: ABS prednji rob", value=True, key="abs_polica_cb")
+    abs_vrata = st.checkbox("Vrata: ABS na vseh 4 straneh", value=True, key="abs_vrata_cb")
+
+if st.button("💾 Shrani omaro v projekt", type="primary", key="shrani_btn"):
     if "elements" not in st.session_state:
         st.session_state.elements = []
         
@@ -114,13 +122,14 @@ if st.sidebar.button("💾 Shrani omaro v projekt", key="shrani_gumb"):
         "ABS_Polica": abs_polica,
         "ABS_Vrata": abs_vrata
     })
-    st.sidebar.success(f"Dodano: {ime_elementa}")
+    st.success(f"Element '{ime_elementa}' uspešno shranjen v projekt!")
 
 # --- GLAVNI ZASLON ---
 if "elements" not in st.session_state:
     st.session_state.elements = []
 
-st.subheader(f"📋 Seznam elementov za projekt: {vrsta_projekta}")
+st.divider()
+st.subheader(f"📋 Seznam shranjenih elementov za projekt: {vrsta_projekta}")
 
 if len(st.session_state.elements) > 0:
     for i, el in enumerate(st.session_state.elements):
@@ -140,7 +149,7 @@ if len(st.session_state.elements) > 0:
                 st.session_state.elements.pop(i)
                 st.rerun()
 
-    if st.button("🗑️ Počisti cel projekt", key="pocisti_gumb"):
+    if st.button("🗑️ Počisti cel projekt", key="pocisti_btn"):
         st.session_state.elements = []
         st.rerun()
 
@@ -163,7 +172,7 @@ if len(st.session_state.elements) > 0:
 
     # --- 3D MASIVNI PRIKAZ ---
     st.subheader("🧊 3D predogled elementa (Z možnostjo približevanja in vrtenja)")
-    izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="izbor_3d")
+    izbran_indeks = st.selectbox("Izberi element za 3D prikaz", range(len(st.session_state.elements)), format_func=lambda x: st.session_state.elements[x]["Naziv"], key="izbor_3d_box")
     
     el_3d = st.session_state.elements[izbran_indeks]
     d_3d = el_3d["Debelina"]
@@ -197,7 +206,7 @@ if len(st.session_state.elements) > 0:
     hrbelt_xmin = d_3d - gutora_3d
     hrbelt_xmax = w_3d - d_3d + gutora_3d
     hrbelt_y_zacetek = depth_3d - ouz_3d
-    hrbelt_y_konec = depth_3d - ouz_3d + 5  # Debelina hrbta 5 mm
+    hrbelt_y_konec = depth_3d - ouz_3d + 5
     
     if "Vsi elementi" in nacin_h_3d:
         hrbelt_zmin = -gutora_3d
@@ -241,7 +250,7 @@ if len(st.session_state.elements) > 0:
     st.divider()
 
     # --- 4. IZRAČUN ---
-    if st.button("🧮 Izračunaj skupni krojni list in robne trakove", type="primary", key="izracun_gumb"):
+    if st.button("🧮 Izračunaj skupni krojni list in robne trakove", type="primary", key="izracun_skupni_btn"):
         vsi_kosi = []
         for el in st.session_state.elements:
             d = el.get("Debelina", 18)
@@ -309,4 +318,4 @@ if len(st.session_state.elements) > 0:
         df_skupaj = pd.DataFrame(vsi_kosi)
         st.dataframe(df_skupaj, use_container_width=True)
 else:
-    st.info("V projektu še ni elementov. Izberite prostor in dodajte prvo omaro.")
+    st.info("V projektu še ni elementov. Izberite prostor in dodajte prvo omaro zgoraj.")
